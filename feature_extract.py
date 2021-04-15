@@ -160,7 +160,7 @@ def demon(source, high=30000, low=20000, cutoff=1000.0, fs=200000, mode='square_
         IEEE. http://ieeexplore.ieee.org/document/7761197/
 
     Args:
-        source: np.ndarray 
+        source: np.ndarray, shape==(fl,), input wav.
         high: float, passband limits as a fraction of signal band limit
         low: float, passband limits as a fraction of signal band limit
         cutoff: float, for calculate decimation rate
@@ -211,8 +211,6 @@ def demon(source, high=30000, low=20000, cutoff=1000.0, fs=200000, mode='square_
     features = x - mean(x)
 
     return features
-
-    """Input 1D frame (must shape (fl,)), return feature."""
 
 def feature_extract(feature, **kwargs):
     """Extrct a feature of wav frame.

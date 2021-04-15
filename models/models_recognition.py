@@ -90,7 +90,7 @@ def build_model10(id1, id2, od, **kwargs):  # ResNet 2D 50
     output_activation = kwargs['output_activation'] if 'output_activation' in kwargs.keys() else 'sigmoid'
     input_frames = Input(shape=(id1, id2, 1))
     model_resnet = keras_resnet.models.ResNet2D50(
-        input_frames, include_top=True, classes=3, freeze_bn=False, output_activation=output_activation)
+        input_frames, include_top=True, classes=od, freeze_bn=False, output_activation=output_activation)
     logging.info(model_resnet.summary())
     return model_resnet
 
@@ -116,7 +116,7 @@ def build_model12(id1, id2, od, **kwargs):  # ResNet 2D 18
     output_activation = kwargs['output_activation'] if 'output_activation' in kwargs.keys() else 'sigmoid'
     input_frames = Input(shape=(id1, id2, 1))
     model_resnet = keras_resnet.models.ResNet2D18(
-        input_frames, include_top=True, classes=3, freeze_bn=False, output_activation=output_activation)
+        input_frames, include_top=True, classes=od, freeze_bn=False, output_activation=output_activation)
     logging.debug(f'model.inputs {model_resnet.inputs}')
     logging.info(model_resnet.summary())
     return model_resnet
@@ -125,7 +125,7 @@ def build_model13(id1, id2, od, **kwargs):  # ResNet 2D 34
     output_activation = kwargs['output_activation'] if 'output_activation' in kwargs.keys() else 'sigmoid'
     input_frames = Input(shape=(id1, id2, 1))
     model_resnet = keras_resnet.models.ResNet2D34(
-        input_frames, include_top=True, classes=3, freeze_bn=False, output_activation=output_activation)
+        input_frames, include_top=True, classes=od, freeze_bn=False, output_activation=output_activation)
     logging.info(model_resnet.summary())
     return model_resnet
 

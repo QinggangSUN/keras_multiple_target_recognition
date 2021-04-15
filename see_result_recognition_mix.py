@@ -344,6 +344,15 @@ if __name__ == '__main__':
     from prepare_data_shipsear_recognition_mix_s0tos3 import read_data, save_datas
 
     def walk_result_files(path_feature, kw_dir='loss'):
+        """Walk result files.
+
+        Args:
+            path_feature (str): Root path of the result of a feature.
+            kw_dir (str, optional): Where sub dir result files saved. Defaults to 'loss'.
+
+        Returns:
+            path_result_files (list[(str)]): List of the names of the reult files.
+        """
         path_result_files = []
         path_result_dirs = walk_result_dirs(path_feature)  # list[model_i][model_i_j][learn_rate]
         logging.debug(path_result_dirs)
@@ -364,6 +373,15 @@ if __name__ == '__main__':
             self.n_src = n_src
 
         def see_metrics(self, dict_metric, path_save=None):
+            """See metrics of the results.
+
+            Args:
+                dict_metric (dict{str:bool}): Whether see the feature.
+                path_save (str, optional): Path to save metrics. Defaults to None.
+
+            Returns:
+                dict_results (dict): Mutiple layer dictionary of the metrics.
+            """
             path_result_files = self.path_result_files
             dict_results = dict()
             for i, path_result_file in enumerate(path_result_files):

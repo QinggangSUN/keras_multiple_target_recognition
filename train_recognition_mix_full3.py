@@ -16,7 +16,7 @@ if __name__ == '__main__':
     from keras import optimizers
     from keras.callbacks import Callback, TensorBoard, ModelCheckpoint
     from keras.layers import Input
-    from keras.models import load_model
+    from keras.models import load_model, Model
     from keras.utils import np_utils, plot_model, multi_gpu_model
     import keras_resnet
     import logging
@@ -43,22 +43,25 @@ if __name__ == '__main__':
 #    # see: https://stackoverflow.com/questions/42022950/
 #    SESSION_CONF = tf.ConfigProto(
 #        intra_op_parallelism_threads=1, inter_op_parallelism_threads=1)
-#    SESSION_CONF = tf.ConfigProto()
+    SESSION_CONF = tf.ConfigProto()
 #    SESSION_CONF.intra_op_parallelism_threads = True
 #    SESSION_CONF.inter_op_parallelism_threads = True
 #
-#    # Limiting GPU memory growth (forbidden GPU OOM?)
-#    SESSION_CONF.gpu_options.allow_growth = True
-#
-#    SESS = tf.Session(graph=tf.get_default_graph(), config=SESSION_CONF)
-#    K.set_session(SESS)
+    # Limiting GPU memory growth (forbidden GPU OOM)
+    SESSION_CONF.gpu_options.allow_growth = True
 
-    def create_model(x_list, y_list, num_model):
+    SESS = tf.Session(graph=tf.get_default_graph(), config=SESSION_CONF)
+    K.set_session(SESS)
+
+    N_GPU = 2
+
+    def create_model(x_list, y_list, num_model, n_gpu=1):
         """Create model.
         Args:
             x_list (list[np.array]): input datasets.
             y_list (list[np.array]): output datasets.
             num_model (int): the number of model.
+            n_gpu (int): number of gpu to train model.
         Returns:
             keras.Model: return model build.
         """
@@ -104,6 +107,10 @@ if __name__ == '__main__':
         elif num_model == 24:
             model = build_model24(d1, od)  # Complex DenseNet 1D 169
 
+        if num_model in list(range(15, 25)) and n_gpu > 1:
+            inputs = Input(shape=(d1, d2, 2))
+            target = model(inputs)
+            model = Model(inputs, [target])
         return model
 
     def test_model(model, x_list, y_list, pbs, modelname, path_save, **kwargs):
@@ -230,7 +237,8 @@ if __name__ == '__main__':
                                            mode=1, **{'custom_objects':dict_model_load})
 
         if mode_load == 3:  # build a new model
-            check_model = create_model(x_list, y_list, num_model)
+            n_gpu = 1 if 'n_gpu' not in kwargs.keys() else kwargs['n_gpu']
+            check_model = create_model(x_list, y_list, num_model, n_gpu)
 
         if mode_load in {2, 3}:
             optimizer=optimizers.Adam(lr=1e-3) if 'optimizer' not in kwargs.keys() else kwargs['optimizer']
@@ -541,7 +549,6 @@ if __name__ == '__main__':
 
         return x_list, y_list
 
-    from models.models_recognition import build_model, build_model2, build_model3, build_model4
     from models.models_recognition import build_model5, build_model6, build_model7, build_model8, build_model9, build_model90
     from models.models_recognition import build_model10, build_model11, build_model12, build_model13, build_model14
     from models.models_recognition import build_model15, build_model16, build_model17, build_model18, build_model19
@@ -570,7 +577,7 @@ if __name__ == '__main__':
         if 90 in model_list:
             model90 = build_model90(d1, d2, od, **{'output_activation':'linear'})  # ResNet 1D 10
             path_result = os.path.join(path_save, 'model_90_1_1')
-            paras = {'i':i, 'j':j, 'epochs':1, 'batch_size':64, 'n_gpu':1}
+            paras = {'i':i, 'j':j, 'epochs':100, 'batch_size':64, 'n_gpu':N_GPU}
             train_model(model=model90, paras=paras, x_list=x_list, y_list=y_list, path_save=path_result)
             del model90
             gc.collect()
@@ -578,7 +585,7 @@ if __name__ == '__main__':
         if 9 in model_list:
             model9 = build_model9(d1, d2, od, **{'output_activation':'linear'})  # ResNet 1D 18
             path_result = os.path.join(path_save, 'model_9_1_1')
-            paras = {'i':i, 'j':j, 'epochs':1, 'batch_size':64, 'n_gpu':1}
+            paras = {'i':i, 'j':j, 'epochs':100, 'batch_size':64, 'n_gpu':N_GPU}
             train_model(model=model9, paras=paras, x_list=x_list, y_list=y_list, path_save=path_result)
             del model9
             gc.collect()
@@ -586,7 +593,7 @@ if __name__ == '__main__':
         if 6 in model_list:
             model6 = build_model6(d1, d2, od, **{'output_activation':'linear'})  # ResNet 1D 34
             path_result = os.path.join(path_save, 'model_6_1_1')
-            paras = {'i':i, 'j':j, 'epochs':1, 'batch_size':64, 'n_gpu':1}
+            paras = {'i':i, 'j':j, 'epochs':100, 'batch_size':64, 'n_gpu':N_GPU}
             train_model(model=model6, paras=paras, x_list=x_list, y_list=y_list, path_save=path_result)
             del model6
             gc.collect()
@@ -594,7 +601,7 @@ if __name__ == '__main__':
         if 5 in model_list:
             model5 = build_model5(d1, d2, od, **{'output_activation':'linear'})  # ResNet 1D 50
             path_result = os.path.join(path_save, 'model_5_1_1')
-            paras = {'i':i, 'j':j, 'epochs':1, 'batch_size':64, 'n_gpu':1}
+            paras = {'i':i, 'j':j, 'epochs':100, 'batch_size':64, 'n_gpu':N_GPU}
             train_model(model=model5, paras=paras, x_list=x_list, y_list=y_list, path_save=path_result)
             del model5
             gc.collect()
@@ -602,7 +609,7 @@ if __name__ == '__main__':
         if 7 in model_list:
             model7 = build_model7(d1, d2, od, **{'output_activation':'linear'})  # DenseNet 1D 121
             path_result = os.path.join(path_save, 'model_7_1_1')
-            paras = {'i':i, 'j':j, 'epochs':1, 'batch_size':64, 'n_gpu':1}
+            paras = {'i':i, 'j':j, 'epochs':100, 'batch_size':64, 'n_gpu':N_GPU}
             train_model(model=model7, paras=paras, x_list=x_list, y_list=y_list, path_save=path_result)
             del model7
             gc.collect()
@@ -610,7 +617,7 @@ if __name__ == '__main__':
         if 8 in model_list:
             model8 = build_model8(d1, d2, od, **{'output_activation':'linear'})  # DenseNet 1D 169
             path_result = os.path.join(path_save, 'model_8_1_1')
-            paras = {'i':i, 'j':j, 'epochs':1, 'batch_size':64, 'n_gpu':1}
+            paras = {'i':i, 'j':j, 'epochs':100, 'batch_size':64, 'n_gpu':N_GPU}
             train_model(model=model8, paras=paras, x_list=x_list, y_list=y_list, path_save=path_result)
             del model8
             gc.collect()
@@ -618,7 +625,7 @@ if __name__ == '__main__':
         if 12 in model_list:
             model12 = build_model12(d1, d2, od, **{'output_activation':'linear'})  # ResNet 2D 18
             path_result = os.path.join(path_save, 'model_12_1_1')
-            paras = {'i':i, 'j':j, 'epochs':3, 'batch_size':10, 'n_gpu':1, 'test_check_models':False}
+            paras = {'i':i, 'j':j, 'epochs':100, 'batch_size':10, 'n_gpu':N_GPU, 'test_check_models':False}
             train_model(model=model12, x_list=x_list, y_list=y_list, paras=paras, path_save=path_result)
             del model12
             gc.collect()
@@ -626,7 +633,7 @@ if __name__ == '__main__':
         if 13 in model_list:
             model13 = build_model13(d1, d2, od, **{'output_activation':'linear'})  # ResNet 2D 34
             path_result = os.path.join(path_save, 'model_13_1_1')
-            paras = {'i':i, 'j':j, 'epochs':3, 'batch_size':10, 'n_gpu':1, 'test_check_models':False}
+            paras = {'i':i, 'j':j, 'epochs':100, 'batch_size':10, 'n_gpu':N_GPU, 'test_check_models':False}
             train_model(model=model13, x_list=x_list, y_list=y_list, paras=paras, path_save=path_result)
             del model13
             gc.collect()
@@ -634,7 +641,7 @@ if __name__ == '__main__':
         if 10 in model_list:
             model10 = build_model10(d1, d2, od, **{'output_activation':'linear'})  # ResNet 2D 50
             path_result = os.path.join(path_save, 'model_10_1_1')
-            paras = {'i':i, 'j':j, 'epochs':3, 'batch_size':10, 'n_gpu':1}
+            paras = {'i':i, 'j':j, 'epochs':100, 'batch_size':10, 'n_gpu':N_GPU}
             train_model(model=model10, x_list=x_list, y_list=y_list, paras=paras, path_save=path_result)
             del model10
             gc.collect()
@@ -642,7 +649,7 @@ if __name__ == '__main__':
         if 11 in model_list:
             model11 = build_model11(d1, d2, od, **{'output_activation':'linear'})  # DenseNet 2D 121
             path_result = os.path.join(path_save, 'model_11_1_1')
-            paras = {'i':i, 'j':j, 'epochs':3, 'batch_size':10, 'n_gpu':1}
+            paras = {'i':i, 'j':j, 'epochs':100, 'batch_size':10, 'n_gpu':N_GPU}
             train_model(model=model11, x_list=x_list, y_list=y_list, paras=paras, path_save=path_result)
             del model11
             gc.collect()
@@ -650,7 +657,7 @@ if __name__ == '__main__':
         if 14 in model_list:
             model14 = build_model14(d1, d2, od, **{'output_activation':'linear'})  # DenseNet 2D 169
             path_result = os.path.join(path_save, 'model_14_1_1')
-            paras = {'i':i, 'j':j, 'epochs':3, 'batch_size':10, 'n_gpu':1}
+            paras = {'i':i, 'j':j, 'epochs':100, 'batch_size':10, 'n_gpu':N_GPU}
             train_model(model=model14, x_list=x_list, y_list=y_list, paras=paras, path_save=path_result)
             del model14
             gc.collect()
@@ -658,7 +665,7 @@ if __name__ == '__main__':
         if 15 in model_list:
             model15 = build_model15(d1, d2, od, **{'output_activation':'linear'})  # Complex ResNet 2D 18
             path_result = os.path.join(path_save, 'model_15_1_1')
-            paras = {'i':i, 'j':j, 'epochs':1, 'batch_size':1, 'n_gpu':1}
+            paras = {'i':i, 'j':j, 'epochs':100, 'batch_size':8, 'n_gpu':N_GPU}
             train_model(model=model15, x_list=x_list, y_list=y_list, paras=paras, path_save=path_result)
             del model15
             gc.collect()
@@ -666,7 +673,7 @@ if __name__ == '__main__':
         if 16 in model_list:
             model16 = build_model16(d1, d2, od, **{'output_activation':'linear'})  # Complex ResNet 2D 34
             path_result = os.path.join(path_save, 'model_16_1_1')
-            paras = {'i':i, 'j':j, 'epochs':1, 'batch_size':1, 'n_gpu':1}
+            paras = {'i':i, 'j':j, 'epochs':100, 'batch_size':8, 'n_gpu':N_GPU}
             train_model(model=model16, x_list=x_list, y_list=y_list, paras=paras, path_save=path_result)
             del model16
             gc.collect()
@@ -674,7 +681,7 @@ if __name__ == '__main__':
         if 17 in model_list:
             model17 = build_model17(d1, d2, od, **{'output_activation':'linear'})  # Complex ResNet 2D 50
             path_result = os.path.join(path_save, 'model_17_1_1')
-            paras = {'i':i, 'j':j, 'epochs':1, 'batch_size':1, 'n_gpu':1}
+            paras = {'i':i, 'j':j, 'epochs':100, 'batch_size':8, 'n_gpu':N_GPU}
             train_model(model=model17, x_list=x_list, y_list=y_list, paras=paras, path_save=path_result)
             del model17
             gc.collect()
@@ -682,7 +689,7 @@ if __name__ == '__main__':
         if 18 in model_list:
             model18 = build_model18(d1, d2, od, **{'output_activation':'linear'})  # Complex DenseNet 2D 121
             path_result = os.path.join(path_save, 'model_18_1_1')
-            paras = {'i':i, 'j':j, 'epochs':1, 'batch_size':1, 'n_gpu':1}
+            paras = {'i':i, 'j':j, 'epochs':100, 'batch_size':8, 'n_gpu':N_GPU}
             train_model(model=model18, x_list=x_list, y_list=y_list, paras=paras, path_save=path_result)
             del model18
             gc.collect()
@@ -690,7 +697,7 @@ if __name__ == '__main__':
         if 19 in model_list:
             model19 = build_model19(d1, d2, od, **{'output_activation':'linear'})  # Complex DenseNet 2D 169
             path_result = os.path.join(path_save, 'model_19_1_1')
-            paras = {'i':i, 'j':j, 'epochs':1, 'batch_size':1, 'n_gpu':1}
+            paras = {'i':i, 'j':j, 'epochs':100, 'batch_size':8, 'n_gpu':N_GPU}
             train_model(model=model19, x_list=x_list, y_list=y_list, paras=paras, path_save=path_result)
             del model19
             gc.collect()
@@ -698,7 +705,7 @@ if __name__ == '__main__':
         if 20 in model_list:
             model20 = build_model20(d1, od, **{'output_activation':'linear'})  # Complex ResNet 1D 18
             path_result = os.path.join(path_save, 'model_20_1_1')
-            paras = {'i':i, 'j':j, 'epochs':1, 'batch_size':1, 'n_gpu':1}
+            paras = {'i':i, 'j':j, 'epochs':100, 'batch_size':8, 'n_gpu':N_GPU}
             train_model(model=model20, x_list=x_list, y_list=y_list, paras=paras, path_save=path_result)
             del model20
             gc.collect()
@@ -706,7 +713,7 @@ if __name__ == '__main__':
         if 21 in model_list:
             model21 = build_model21(d1, od, **{'output_activation':'linear'})  # Complex ResNet 1D 34
             path_result = os.path.join(path_save, 'model_21_1_1')
-            paras = {'i':i, 'j':j, 'epochs':1, 'batch_size':1, 'n_gpu':1}
+            paras = {'i':i, 'j':j, 'epochs':100, 'batch_size':8, 'n_gpu':N_GPU}
             train_model(model=model21, x_list=x_list, y_list=y_list, paras=paras, path_save=path_result)
             del model21
             gc.collect()
@@ -714,7 +721,7 @@ if __name__ == '__main__':
         if 22 in model_list:
             model22 = build_model22(d1, od, **{'output_activation':'linear'})  # Complex ResNet 1D 50
             path_result = os.path.join(path_save, 'model_22_1_1')
-            paras = {'i':i, 'j':j, 'epochs':1, 'batch_size':1, 'n_gpu':1}
+            paras = {'i':i, 'j':j, 'epochs':100, 'batch_size':8, 'n_gpu':N_GPU}
             train_model(model=model22, x_list=x_list, y_list=y_list, paras=paras, path_save=path_result)
             del model22
             gc.collect()
@@ -722,7 +729,7 @@ if __name__ == '__main__':
         if 23 in model_list:
             model23 = build_model23(d1, od, **{'output_activation':'linear'})  # Complex DenseNet 1D 121
             path_result = os.path.join(path_save, 'model_23_1_1')
-            paras = {'i':i, 'j':j, 'epochs':1, 'batch_size':1, 'n_gpu':1}
+            paras = {'i':i, 'j':j, 'epochs':100, 'batch_size':8, 'n_gpu':N_GPU}
             train_model(model=model23, x_list=x_list, y_list=y_list, paras=paras, path_save=path_result)
             del model23
             gc.collect()
@@ -730,7 +737,7 @@ if __name__ == '__main__':
         if 24 in model_list:
             model24 = build_model24(d1, od, **{'output_activation':'linear'})  # Complex DenseNet 1D 169
             path_result = os.path.join(path_save, 'model_24_1_1')
-            paras = {'i':i, 'j':j, 'epochs':1, 'batch_size':1, 'n_gpu':1}
+            paras = {'i':i, 'j':j, 'epochs':100, 'batch_size':8, 'n_gpu':N_GPU}
             train_model(model=model24, x_list=x_list, y_list=y_list, paras=paras, path_save=path_result)
             del model24
             gc.collect()
@@ -767,7 +774,8 @@ if __name__ == '__main__':
                          'BatchNormalization':keras_resnet.layers.BatchNormalization}
     DICT_MODEL_COMPILE = {'optimizer':optimizers.Adam(lr=1e-3),
                           'loss':'MSE',
-                          'metrics':[subset_acc_int, macro_averaged_acc_int]}
+                          'metrics':[subset_acc_int, macro_averaged_acc_int],
+                          'n_gpu':N_GPU}
     # --------------------------------------------------------------------------
     # for wavmat
     path_save = os.path.join(PATH_SAVE_ROOT, 'wavmat_or_rand')  # _mm_order
@@ -780,11 +788,11 @@ if __name__ == '__main__':
             search_models(x_list, y_list, [7, 8], path_save, **{'i':i, 'j':j})
 
     test_all_check_models(path_save, x_list=x_list, y_list=y_list, num_models=[7, 8], model_load=0,
-                            dict_model_load=DICT_MODEL_CONFIG)
-    test_all_check_models(path_save, x_list=x_list, y_list=y_list, num_models=[7, 8], model_load=3,
-                            dict_model_load={**DICT_MODEL_CONFIG, **DICT_MODEL_STRUCT},
-                            kw_model='.hdf5',
-                            **DICT_MODEL_COMPILE)
+                          dict_model_load=DICT_MODEL_CONFIG)
+    # test_all_check_models(path_save, x_list=x_list, y_list=y_list, num_models=[7, 8], model_load=3,
+    #                       dict_model_load={**DICT_MODEL_CONFIG, **DICT_MODEL_STRUCT},
+    #                       kw_model='.hdf5',
+    #                       **DICT_MODEL_COMPILE)
 
     y_list = [np.squeeze(y_i) for y_i in y_list]  # (n_samples, od)
 
@@ -793,9 +801,9 @@ if __name__ == '__main__':
             search_models(x_list, y_list, [90, 9, 6, 5], path_save, **{'i':i, 'j':j})
 
     test_all_check_models(path_save, x_list=x_list, y_list=y_list, num_models=[90, 9, 6, 5], model_load=3,
-                            dict_model_load={**DICT_MODEL_CONFIG, **DICT_MODEL_STRUCT},
-                            kw_model='.hdf5',
-                            **DICT_MODEL_COMPILE)
+                          dict_model_load={**DICT_MODEL_CONFIG, **DICT_MODEL_STRUCT},
+                          kw_model='.hdf5',
+                          **DICT_MODEL_COMPILE)
     # --------------------------------------------------------------------------
     # for 1D magspectrum
     WIN_LENGTH = 10547
@@ -803,7 +811,7 @@ if __name__ == '__main__':
     path_save = os.path.join(PATH_SAVE_ROOT, f'magspectrum_{WIN_LENGTH}_{HOP_LENGTH}_or_rand')
     mkdir(path_save)
     x_list, y_list = load_data(path_root=PATH_ROOT, form_src='magspectrum', scaler_data='or', sub_set_way='rand',
-                                **{'win_length':WIN_LENGTH, 'hop_length':HOP_LENGTH})
+                               **{'win_length':WIN_LENGTH, 'hop_length':HOP_LENGTH})
     x_list, y_list = standar_data(x_list, y_list, 1, 2, test_few=False)
 
     for i in range(1, 2):
@@ -820,9 +828,9 @@ if __name__ == '__main__':
             search_models(x_list, y_list, [9, 6, 5], path_save, **{'i':i, 'j':j})
 
     test_all_check_models(path_save, x_list=x_list, y_list=y_list, num_models=[9, 6, 5], model_load=3,
-                            dict_model_load={**DICT_MODEL_CONFIG, **DICT_MODEL_STRUCT},
-                            kw_model='.hdf5',
-                            **DICT_MODEL_COMPILE)
+                          dict_model_load={**DICT_MODEL_CONFIG, **DICT_MODEL_STRUCT},
+                          kw_model='.hdf5',
+                          **DICT_MODEL_COMPILE)
     # --------------------------------------------------------------------------
     # for 2D magspectrum
     WIN_LIST = [264, 528, 1056, 1582, 2110, 2638, 3164]
@@ -832,15 +840,15 @@ if __name__ == '__main__':
         path_save = os.path.join(PATH_SAVE_ROOT, f'magspectrum_{win_i}_{hop_i}_or_rand')
         mkdir(path_save)
         x_list, y_list = load_data(path_root=PATH_ROOT, form_src='magspectrum', scaler_data='or', sub_set_way='rand',
-                                    **{'win_length':win_i, 'hop_length':hop_i})
-        x_list, y_list = standar_data(x_list, y_list, 2, 2, test_few=True)
+                                   **{'win_length':win_i, 'hop_length':hop_i})
+        x_list, y_list = standar_data(x_list, y_list, 2, 2, test_few=False)
 
         for i in range(1, 2):
             for j in range(-3, -4, -1):
                 search_models(x_list, y_list, [11, 14], path_save, **{'i':i, 'j':j})
 
         test_all_check_models(path_save, x_list=x_list, y_list=y_list, num_models=[11, 14], model_load=0,
-                                dict_model_load=DICT_MODEL_CONFIG)
+                              dict_model_load=DICT_MODEL_CONFIG)
 
         y_list = [np.squeeze(y_i) for y_i in y_list]  # (n_samples, od)
 
@@ -849,9 +857,9 @@ if __name__ == '__main__':
                 search_models(x_list, y_list, [12, 13, 10], path_save, **{'i':i, 'j':j})
 
         test_all_check_models(path_save, x_list=x_list, y_list=y_list, num_models=[12, 13, 10], model_load=3,
-                                dict_model_load={**DICT_MODEL_CONFIG, **DICT_MODEL_STRUCT},
-                                kw_model='.hdf5',
-                                **DICT_MODEL_COMPILE)
+                              dict_model_load={**DICT_MODEL_CONFIG, **DICT_MODEL_STRUCT},
+                              kw_model='.hdf5',
+                              **DICT_MODEL_COMPILE)
     # --------------------------------------------------------------------------
     # for log-mel spectrum
     WIN_LIST = [264, 528, 1056, 1582, 2110, 2638, 3164]
@@ -864,7 +872,7 @@ if __name__ == '__main__':
             path_save = os.path.join(PATH_SAVE_ROOT, f'logmelspectrum_{win_i}_{hop_i}_{n_mels_i}_or_rand')
             mkdir(path_save)
             x_list, y_list = load_data(path_root=PATH_ROOT, form_src='logmelspectrum', scaler_data='or', sub_set_way='rand',
-                                **{'win_length':win_i, 'hop_length':hop_i, 'n_mels':n_mels_i})
+                                       **{'win_length':win_i, 'hop_length':hop_i, 'n_mels':n_mels_i})
             x_list, y_list = standar_data(x_list, y_list, 2, 2)
 
             for i in range(1, 2):
@@ -872,7 +880,7 @@ if __name__ == '__main__':
                     search_models(x_list, y_list, [11, 14], path_save, **{'i':i, 'j':j})
 
             test_all_check_models(path_save, x_list=x_list, y_list=y_list, num_models=[11, 14], model_load=0,
-                                dict_model_load=DICT_MODEL_CONFIG)
+                                  dict_model_load=DICT_MODEL_CONFIG)
 
             y_list = [np.squeeze(y_i) for y_i in y_list]  # (n_samples, od)
             for i in range(1, 2):
@@ -880,9 +888,9 @@ if __name__ == '__main__':
                     search_models(x_list, y_list, [12, 13, 10], path_save, **{'i':i, 'j':j})
 
             test_all_check_models(path_save, x_list=x_list, y_list=y_list, num_models=[12, 13, 10], model_load=3,
-                                dict_model_load={**DICT_MODEL_CONFIG, **DICT_MODEL_STRUCT},
-                                kw_model='.hdf5',
-                                **DICT_MODEL_COMPILE)
+                                  dict_model_load={**DICT_MODEL_CONFIG, **DICT_MODEL_STRUCT},
+                                  kw_model='.hdf5',
+                                  **DICT_MODEL_COMPILE)
     # --------------------------------------------------------------------------
     #  for mfcc
     WIN_LIST = [264, 528, 1056, 1582, 2110, 2638, 3164]
@@ -899,7 +907,7 @@ if __name__ == '__main__':
                 mkdir(path_save)
                 x_list, y_list = load_data(path_root=PATH_ROOT, form_src='mfcc', scaler_data='or', sub_set_way='rand',
                                            **{'win_length':win_i, 'hop_length':hop_i, 'n_mels':n_mels_i, 'n_mfcc':n_mfcc_i})
-                x_list, y_list = standar_data(x_list, y_list, 2, 2, test_few=True)
+                x_list, y_list = standar_data(x_list, y_list, 2, 2, test_few=False)
 
                 test_all_check_models(path_save, x_list=x_list, y_list=y_list, num_models=[11, 14], model_load=0,
                                     dict_model_load=DICT_MODEL_CONFIG)
@@ -947,9 +955,9 @@ if __name__ == '__main__':
                     search_models(x_list, y_list, [90, 9, 6, 5], path_save, **{'i':i, 'j':j})
 
             test_all_check_models(path_save, x_list=x_list, y_list=y_list, num_models=[90, 9, 6, 5], model_load=3,
-                                    dict_model_load={**DICT_MODEL_CONFIG, **DICT_MODEL_STRUCT},
-                                    kw_model='.hdf5',
-                                    **DICT_MODEL_COMPILE)
+                                  dict_model_load={**DICT_MODEL_CONFIG, **DICT_MODEL_STRUCT},
+                                  kw_model='.hdf5',
+                                  **DICT_MODEL_COMPILE)
     # --------------------------------------------------------------------------
     # for 2D realspectrum and imgspectrum
     WIN_LIST = [264, 528, 1056, 1582, 2110, 2638, 3164]
@@ -970,13 +978,13 @@ if __name__ == '__main__':
 
         for i in range(1, 2):
             for j in range(-3, -4, -1):
-                search_models(x_list, y_list, [19], path_save, **{'i':i, 'j':j})  # 15, 16, 17, 18, 19
+                search_models(x_list, y_list, [15, 16, 17, 18, 19], path_save, **{'i':i, 'j':j})  # 15, 16, 17, 18, 19
 
                 test_all_check_models(path_save, x_list=x_list, y_list=y_list,
-                                        num_models=[15, 16, 17, 18, 19], model_load=3,
-                                        dict_model_load={**DICT_MODEL_CONFIG, **DICT_MODEL_STRUCT},
-                                        kw_model='.hdf5',
-                                        **DICT_MODEL_COMPILE)
+                                      num_models=[15, 16, 17, 18, 19], model_load=3,
+                                      dict_model_load={**DICT_MODEL_CONFIG, **DICT_MODEL_STRUCT},
+                                      kw_model='.hdf5',
+                                      **DICT_MODEL_COMPILE)
     # --------------------------------------------------------------------------
     # for 1D realspectrum and imgspectrum
     WIN_LIST = [10547]
@@ -1004,9 +1012,9 @@ if __name__ == '__main__':
                 search_models(x_list, y_list, [20, 21, 22, 23, 24], path_save, **{'i':i, 'j':j})
 
                 test_all_check_models(path_save, x_list=x_list, y_list=y_list,
-                                        num_models=[20, 21, 22, 23, 24], model_load=3,
-                                        dict_model_load={**DICT_MODEL_CONFIG, **DICT_MODEL_STRUCT},
-                                        kw_model='.hdf5',
-                                        **DICT_MODEL_COMPILE)
+                                      num_models=[20, 21, 22, 23, 24], model_load=3,
+                                      dict_model_load={**DICT_MODEL_CONFIG, **DICT_MODEL_STRUCT},
+                                      kw_model='.hdf5',
+                                      **DICT_MODEL_COMPILE)
 
     logging.info('finished')
