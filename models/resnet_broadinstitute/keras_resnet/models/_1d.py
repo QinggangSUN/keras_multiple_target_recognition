@@ -26,15 +26,19 @@ class ResNet1D(keras.Model):
 
     :param block: a residual block (e.g. an instance of `keras_resnet.blocks.basic_1d`)
 
+    :param parameters: parameters for conv layers in blocks
+
     :param include_top: if true, includes classification layers
 
     :param classes: number of classes to classify (include_top must be true)
 
     :param freeze_bn: if true, freezes BatchNormalization layers (ie. no updates are done in these layers)
 
+    :param output_activation: activation of the output Dense layer of the classifer
+
     :param numerical_names: list of bool, same size as blocks, used to indicate whether names of layers should include numbers or letters
 
-    :param output_activation: activation of the output Dense layer of the classifer
+    :param dropout_fc : float, (optional), dropout rate of dense layer, defaults to None
 
     :return model: ResNet model with encoding output (if `include_top=False`) or classification output (if `include_top=True`)
 
@@ -60,11 +64,13 @@ class ResNet1D(keras.Model):
         inputs,
         blocks,
         block,
+        parameters={"kernel_initializer": "he_normal"},
         include_top=True,
         classes=1000,
         freeze_bn=True,
         numerical_names=None,
         output_activation=None,
+        dropout_fc=None,
         *args,
         **kwargs
     ):
@@ -77,7 +83,7 @@ class ResNet1D(keras.Model):
             numerical_names = [True] * len(blocks)
 
         x = keras.layers.ZeroPadding1D(padding=3, name="padding_conv1")(inputs)
-        x = keras.layers.Conv1D(64, (7, 7), strides=(2, 2), use_bias=False, name="conv1")(x)  # TODO (7, 7)->(7,)
+        x = keras.layers.Conv1D(64, (7, 7), strides=(2, 2), use_bias=False, name="conv1", **parameters)(x)  # TODO (7, 7)->(7,)
         x = keras_resnet.layers.BatchNormalization(axis=axis, epsilon=1e-5, freeze=freeze_bn, name="bn_conv1")(x)
         x = keras.layers.Activation("relu", name="conv1_relu")(x)
         x = keras.layers.MaxPooling1D((3, 3), strides=(2, 2), padding="same", name="pool1")(x)
@@ -93,7 +99,8 @@ class ResNet1D(keras.Model):
                     stage_id,
                     block_id,
                     numerical_name=(block_id > 0 and numerical_names[stage_id]),
-                    freeze_bn=freeze_bn
+                    freeze_bn=freeze_bn,
+                    parameters=parameters
                 )(x)
 
             features *= 2
@@ -107,6 +114,9 @@ class ResNet1D(keras.Model):
             if output_activation is None:
                 output_activation = "softmax"
             x = keras.layers.Dense(classes, activation=output_activation, name=f'fc{classes}')(x)
+
+            if dropout_fc:
+                x = keras.layers.Dropout(dropout_fc)(x)
 
             super(ResNet1D, self).__init__(inputs=inputs, outputs=x, *args, **kwargs)
         else:
@@ -122,13 +132,17 @@ class ResNet1D18(ResNet1D):
 
     :param blocks: the network’s residual architecture
 
+    :param parameters: parameters for conv layers in blocks
+
     :param include_top: if true, includes classification layers
 
     :param classes: number of classes to classify (include_top must be true)
 
+    :param output_activation: activation of the output Dense layer of the classifer
+
     :param freeze_bn: if true, freezes BatchNormalization layers (ie. no updates are done in these layers)
 
-    :param output_activation: activation of the output Dense layer of the classifer
+    :param dropout_fc : float, (optional), dropout rate of dense layer, defaults to None
 
     :return model: ResNet model with encoding output (if `include_top=False`) or classification output (if `include_top=True`)
 
@@ -144,18 +158,33 @@ class ResNet1D18(ResNet1D):
 
         >>> model.compile("adam", "categorical_crossentropy", ["accuracy"])
     """
-    def __init__(self, inputs, blocks=None, include_top=True, classes=1000, freeze_bn=False, output_activation=None, *args, **kwargs):
+    def __init__(self,
+                 inputs,
+                 blocks=None,
+                 block=None,
+                 parameters={"kernel_initializer": "he_normal"},
+                 include_top=True,
+                 classes=1000,
+                 freeze_bn=False,
+                 output_activation=None,
+                 dropout_fc=None,
+                 *args,
+                 **kwargs):
         if blocks is None:
             blocks = [2, 2, 2, 2]
+        if block is None:
+            block = keras_resnet.blocks.basic_1d
 
         super(ResNet1D18, self).__init__(
             inputs,
             blocks,
-            block=keras_resnet.blocks.basic_1d,
+            block,
+            parameters=parameters,
             include_top=include_top,
             classes=classes,
             freeze_bn=freeze_bn,
             output_activation=output_activation,
+            dropout_fc=dropout_fc,
             *args,
             **kwargs
         )
@@ -169,6 +198,8 @@ class ResNet1D34(ResNet1D):
 
     :param blocks: the network’s residual architecture
 
+    :param parameters: parameters for conv layers in blocks
+
     :param include_top: if true, includes classification layers
 
     :param classes: number of classes to classify (include_top must be true)
@@ -176,6 +207,8 @@ class ResNet1D34(ResNet1D):
     :param freeze_bn: if true, freezes BatchNormalization layers (ie. no updates are done in these layers)
 
     :param output_activation: activation of the output Dense layer of the classifer
+
+    :param dropout_fc : float, (optional), dropout rate of dense layer, defaults to None
 
     :return model: ResNet model with encoding output (if `include_top=False`) or classification output (if `include_top=True`)
 
@@ -191,18 +224,33 @@ class ResNet1D34(ResNet1D):
 
         >>> model.compile("adam", "categorical_crossentropy", ["accuracy"])
     """
-    def __init__(self, inputs, blocks=None, include_top=True, classes=1000, freeze_bn=False, output_activation=None, *args, **kwargs):
+    def __init__(self,
+                 inputs,
+                 blocks=None,
+                 block=None,
+                 parameters={"kernel_initializer": "he_normal"},
+                 include_top=True,
+                 classes=1000,
+                 freeze_bn=False,
+                 output_activation=None,
+                 dropout_fc=None,
+                 *args,
+                 **kwargs):
         if blocks is None:
             blocks = [3, 4, 6, 3]
+        if block is None:
+            block = keras_resnet.blocks.basic_1d
 
         super(ResNet1D34, self).__init__(
             inputs,
             blocks,
-            block=keras_resnet.blocks.basic_1d,
+            block,
+            parameters=parameters,
             include_top=include_top,
             classes=classes,
             freeze_bn=freeze_bn,
             output_activation=output_activation,
+            dropout_fc=dropout_fc,
             *args,
             **kwargs
         )
@@ -216,6 +264,8 @@ class ResNet1D50(ResNet1D):
 
     :param blocks: the network’s residual architecture
 
+    :param parameters: parameters for conv layers in blocks
+
     :param include_top: if true, includes classification layers
 
     :param classes: number of classes to classify (include_top must be true)
@@ -223,6 +273,8 @@ class ResNet1D50(ResNet1D):
     :param freeze_bn: if true, freezes BatchNormalization layers (ie. no updates are done in these layers)
 
     :param output_activation: activation of the output Dense layer of the classifer
+
+    :param dropout_fc : float, (optional), dropout rate of dense layer, defaults to None
 
     :return model: ResNet model with encoding output (if `include_top=False`) or classification output (if `include_top=True`)
 
@@ -238,21 +290,36 @@ class ResNet1D50(ResNet1D):
 
         >>> model.compile("adam", "categorical_crossentropy", ["accuracy"])
     """
-    def __init__(self, inputs, blocks=None, include_top=True, classes=1000, freeze_bn=False, output_activation=None, *args, **kwargs):
+    def __init__(self,
+                 inputs,
+                 blocks=None,
+                 block=None,
+                 parameters={"kernel_initializer": "he_normal"},
+                 include_top=True,
+                 classes=1000,
+                 freeze_bn=False,
+                 output_activation=None,
+                 dropout_fc=None,
+                 *args,
+                 **kwargs):
         if blocks is None:
             blocks = [3, 4, 6, 3]
+        if block is None:
+            block = keras_resnet.blocks.bottleneck_1d
 
         numerical_names = [False, False, False, False]
 
         super(ResNet1D50, self).__init__(
             inputs,
             blocks,
+            block,
+            parameters=parameters,
             numerical_names=numerical_names,
-            block=keras_resnet.blocks.bottleneck_1d,
             include_top=include_top,
             classes=classes,
             freeze_bn=freeze_bn,
             output_activation=output_activation,
+            dropout_fc=dropout_fc,
             *args,
             **kwargs
         )
@@ -266,6 +333,8 @@ class ResNet1D101(ResNet1D):
 
     :param blocks: the network’s residual architecture
 
+    :param parameters: parameters for conv layers in blocks
+
     :param include_top: if true, includes classification layers
 
     :param classes: number of classes to classify (include_top must be true)
@@ -273,6 +342,8 @@ class ResNet1D101(ResNet1D):
     :param freeze_bn: if true, freezes BatchNormalization layers (ie. no updates are done in these layers)
 
     :param output_activation: activation of the output Dense layer of the classifer
+
+    :param dropout_fc : float, (optional), dropout rate of dense layer, defaults to None
 
     :return model: ResNet model with encoding output (if `include_top=False`) or classification output (if `include_top=True`)
 
@@ -288,21 +359,36 @@ class ResNet1D101(ResNet1D):
 
         >>> model.compile("adam", "categorical_crossentropy", ["accuracy"])
     """
-    def __init__(self, inputs, blocks=None, include_top=True, classes=1000, freeze_bn=False, output_activation=None, *args, **kwargs):
+    def __init__(self,
+                 inputs,
+                 blocks=None,
+                 block=None,
+                 parameters={"kernel_initializer": "he_normal"},
+                 include_top=True,
+                 classes=1000,
+                 freeze_bn=False,
+                 output_activation=None,
+                 dropout_fc=None,
+                 *args,
+                 **kwargs):
         if blocks is None:
             blocks = [3, 4, 23, 3]
+        if block is None:
+            block = keras_resnet.blocks.bottleneck_1d
 
         numerical_names = [False, True, True, False]
 
         super(ResNet1D101, self).__init__(
             inputs,
             blocks,
+            block,
+            parameters=parameters,
             numerical_names=numerical_names,
-            block=keras_resnet.blocks.bottleneck_1d,
             include_top=include_top,
             classes=classes,
             freeze_bn=freeze_bn,
             output_activation=output_activation,
+            dropout_fc=dropout_fc,
             *args,
             **kwargs
         )
@@ -316,6 +402,8 @@ class ResNet1D152(ResNet1D):
 
     :param blocks: the network’s residual architecture
 
+    :param parameters: parameters for conv layers in blocks
+
     :param include_top: if true, includes classification layers
 
     :param classes: number of classes to classify (include_top must be true)
@@ -323,6 +411,8 @@ class ResNet1D152(ResNet1D):
     :param freeze_bn: if true, freezes BatchNormalization layers (ie. no updates are done in these layers)
 
     :param output_activation: activation of the output Dense layer of the classifer
+
+    :param dropout_fc : float, (optional), dropout rate of dense layer, defaults to None
 
     :return model: ResNet model with encoding output (if `include_top=False`) or classification output (if `include_top=True`)
 
@@ -338,21 +428,36 @@ class ResNet1D152(ResNet1D):
 
         >>> model.compile("adam", "categorical_crossentropy", ["accuracy"])
     """
-    def __init__(self, inputs, blocks=None, include_top=True, classes=1000, freeze_bn=False, output_activation=None, *args, **kwargs):
+    def __init__(self,
+                 inputs,
+                 blocks=None,
+                 block=None,
+                 parameters={"kernel_initializer": "he_normal"},
+                 include_top=True,
+                 classes=1000,
+                 freeze_bn=False,
+                 output_activation=None,
+                 dropout_fc=None,
+                 *args,
+                 **kwargs):
         if blocks is None:
             blocks = [3, 8, 36, 3]
+        if block is None:
+            block = keras_resnet.blocks.bottleneck_1d
 
         numerical_names = [False, True, True, False]
 
         super(ResNet1D152, self).__init__(
             inputs,
             blocks,
+            block,
+            parameters=parameters,
             numerical_names=numerical_names,
-            block=keras_resnet.blocks.bottleneck_1d,
             include_top=include_top,
             classes=classes,
             freeze_bn=freeze_bn,
             output_activation=output_activation,
+            dropout_fc=dropout_fc,
             *args,
             **kwargs
         )
@@ -366,6 +471,8 @@ class ResNet1D200(ResNet1D):
 
     :param blocks: the network’s residual architecture
 
+    :param parameters: parameters for conv layers in blocks
+
     :param include_top: if true, includes classification layers
 
     :param classes: number of classes to classify (include_top must be true)
@@ -373,6 +480,8 @@ class ResNet1D200(ResNet1D):
     :param freeze_bn: if true, freezes BatchNormalization layers (ie. no updates are done in these layers)
 
     :param output_activation: activation of the output Dense layer of the classifer
+
+    :param dropout_fc : float, (optional), dropout rate of dense layer, defaults to None
 
     :return model: ResNet model with encoding output (if `include_top=False`) or classification output (if `include_top=True`)
 
@@ -388,21 +497,36 @@ class ResNet1D200(ResNet1D):
 
         >>> model.compile("adam", "categorical_crossentropy", ["accuracy"])
     """
-    def __init__(self, inputs, blocks=None, include_top=True, classes=1000, freeze_bn=False, output_activation=None, *args, **kwargs):
+    def __init__(self,
+                 inputs,
+                 blocks=None,
+                 block=None,
+                 parameters={"kernel_initializer": "he_normal"},
+                 include_top=True,
+                 classes=1000,
+                 freeze_bn=False,
+                 output_activation=None,
+                 dropout_fc=None,
+                 *args,
+                 **kwargs):
         if blocks is None:
             blocks = [3, 24, 36, 3]
+        if block is None:
+            block = keras_resnet.blocks.bottleneck_1d
 
         numerical_names = [False, True, True, False]
 
         super(ResNet1D200, self).__init__(
             inputs,
             blocks,
+            block,
+            parameters=parameters,
             numerical_names=numerical_names,
-            block=keras_resnet.blocks.bottleneck_1d,
             include_top=include_top,
             classes=classes,
             freeze_bn=freeze_bn,
             output_activation=output_activation,
+            dropout_fc=dropout_fc,
             *args,
             **kwargs
         )

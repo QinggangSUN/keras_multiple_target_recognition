@@ -90,7 +90,7 @@ def dense2d_block(x_complex, nb_layers, nb_filter, growth_rate, activation='crel
     return x_complex, nb_filter
 
 
-def transition2d_block(inputs, nb_filter, activation='crelu', compression=1.0, weight_decay=1e-4):
+def transition2d_block(inputs, nb_filter, activation='crelu', compression=1.0, dropout_rate=None, weight_decay=1e-4):
     ''' Apply BatchNorm, Relu 1x1, Conv2D, optional compression, dropout and Maxpooling2D
     Args:
         inputs: keras tensor
@@ -110,6 +110,9 @@ def transition2d_block(inputs, nb_filter, activation='crelu', compression=1.0, w
 
     x_complex = ComplexConv2D(int(nb_filter * compression), (1, 1), use_bias=False, spectral_parametrization=False,
                               padding='same', kernel_regularizer=keras.regularizers.l2(weight_decay))(x_complex)
+
+    if dropout_rate:
+        x_complex = keras.layers.Dropout(dropout_rate)(x_complex)
 
     x_complex = ComplexAveragePooling2D((2, 2), strides=(2, 2))(x_complex)
 

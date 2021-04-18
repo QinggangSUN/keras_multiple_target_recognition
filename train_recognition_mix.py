@@ -57,11 +57,12 @@ if __name__ == '__main__':
     def create_model(x_list, y_list, num_model, n_gpu=1):
         """Create model for test model.
         Args:
-            x_list (list[np.array]): input datasets
-            y_list (list[np.array]): output datasets
-            num_model (int): the number of model
+            x_list (list[np.array]): input datasets.
+            y_list (list[np.array]): output datasets.
+            num_model (int): the number of model.
+            n_gpu (int): number of gpu to train model.
         Returns:
-            keras.Model: return model build
+            keras.Model: return model build.
         """
         d1 = x_list[1].shape[1]
         d2 = x_list[1].shape[2]
@@ -76,6 +77,8 @@ if __name__ == '__main__':
         elif num_model == 5:
             model = build_model5(d1, d2, od)  # ResNet 1D 50
 
+        elif num_model == 120:
+            model = build_model120(d1, d2, od)  # ResNet 2D 10
         elif num_model == 12:
             model = build_model12(d1, d2, od)  # ResNet 2D 18
         elif num_model == 13:
@@ -83,6 +86,8 @@ if __name__ == '__main__':
         elif num_model == 10:
             model = build_model10(d1, d2, od)  # ResNet 2D 50
 
+        elif num_model == 150:
+            model = build_model150(d1, d2, od)  # Complex ResNet 2D 10
         elif num_model == 15:
             model = build_model15(d1, d2, od)  # Complex ResNet 2D 18
         elif num_model == 16:
@@ -94,6 +99,8 @@ if __name__ == '__main__':
         elif num_model == 19:
             model = build_model19(d1, d2, od)  # Complex DenseNet 2D 169
 
+        elif num_model == 200:
+            model = build_model200(d1, od)  # Complex ResNet 1D 10
         elif num_model == 20:
             model = build_model20(d1, od)  # Complex ResNet 1D 18
         elif num_model == 21:
@@ -105,7 +112,7 @@ if __name__ == '__main__':
         elif num_model == 24:
             model = build_model24(d1, od)  # Complex DenseNet 1D 169
 
-        if num_model in list(range(15, 25)) and n_gpu > 1:
+        if num_model in list(range(15, 25))+[150, 200] and n_gpu > 1:
             inputs = Input(shape=(d1, d2, 2))
             target = model(inputs)
             model = Model(inputs, [target])
@@ -209,7 +216,7 @@ if __name__ == '__main__':
             # NOT work, if tensorflow verion < 2.1.0 and using subclass model from keras.Model
             model_file_name = list_files_end_str(path_save_model, '.h5', False)[0]
             check_model = load_model(os.path.join(path_save_model, model_file_name),
-                                        **{'custom_objects':dict_model_load})
+                                     **{'custom_objects':dict_model_load})
 
         if mode_load == 2:  # load model struct by model_from_json
             # this way will not work, if tensorflow verion < 2.1.0 and using subclass model from keras.Model
@@ -555,10 +562,14 @@ if __name__ == '__main__':
         return x_list, y_list
 
     from models.models_recognition import build_model, build_model2, build_model3, build_model4
-    from models.models_recognition import build_model5, build_model6, build_model7, build_model8, build_model9, build_model90
-    from models.models_recognition import build_model10, build_model11, build_model12, build_model13, build_model14
-    from models.models_recognition import build_model15, build_model16, build_model17, build_model18, build_model19
-    from models.models_recognition import build_model20, build_model21, build_model22, build_model23, build_model24
+    from models.models_recognition import build_model90, build_model9, build_model6, build_model5
+    from models.models_recognition import build_model7, build_model8
+    from models.models_recognition import build_model120, build_model12, build_model13, build_model10
+    from models.models_recognition import build_model11, build_model14
+    from models.models_recognition import build_model150, build_model15, build_model16, build_model17
+    from models.models_recognition import build_model18, build_model19
+    from models.models_recognition import build_model200, build_model20, build_model21, build_model22
+    from models.models_recognition import build_model23, build_model24
 
     def search_models(x_list, y_list, model_list, path_save, **kwargs):
         """train the models.
@@ -629,6 +640,14 @@ if __name__ == '__main__':
             del model8
             gc.collect()
 
+        if 120 in model_list:
+            model120 = build_model120(d1, d2, od)  # ResNet 2D 10
+            path_result = os.path.join(path_save, 'model_120_1_1')
+            paras = {'i':i, 'j':j, 'epochs':100, 'batch_size':64, 'n_gpu':N_GPU, 'subset_acc_name':subset_acc_name}
+            train_model(model=model120, x_list=x_list, y_list=y_list, paras=paras, path_save=path_result)
+            del model120
+            gc.collect()
+
         if 12 in model_list:
             model12 = build_model12(d1, d2, od)  # ResNet 2D 18
             path_result = os.path.join(path_save, 'model_12_1_3')
@@ -669,6 +688,14 @@ if __name__ == '__main__':
             del model14
             gc.collect()
 
+        if 150 in model_list:
+            model150 = build_model150(d1, d2, od)  # Complex ResNet 2D 10
+            path_result = os.path.join(path_save, 'model_150_1_1')
+            paras = {'i':i, 'j':j, 'epochs':100, 'batch_size':10, 'n_gpu':N_GPU, 'subset_acc_name':subset_acc_name}
+            train_model(model=model150, x_list=x_list, y_list=y_list, paras=paras, path_save=path_result)
+            del model150
+            gc.collect()
+
         if 15 in model_list:
             model15 = build_model15(d1, d2, od)  # Complex ResNet 2D 18
             path_result = os.path.join(path_save, 'model_15_1_1')
@@ -707,6 +734,14 @@ if __name__ == '__main__':
             paras = {'i':i, 'j':j, 'epochs':100, 'batch_size':10, 'n_gpu':N_GPU, 'subset_acc_name':subset_acc_name}
             train_model(model=model19, x_list=x_list, y_list=y_list, paras=paras, path_save=path_result)
             del model19
+            gc.collect()
+
+        if 200 in model_list:
+            model200 = build_model200(d1, od)  # Complex ResNet 1D 10
+            path_result = os.path.join(path_save, 'model_200_1_1')
+            paras = {'i':i, 'j':j, 'epochs':100, 'batch_size':10, 'n_gpu':N_GPU, 'subset_acc_name':subset_acc_name}
+            train_model(model=model200, x_list=x_list, y_list=y_list, paras=paras, path_save=path_result)
+            del model200
             gc.collect()
 
         if 20 in model_list:
@@ -773,7 +808,6 @@ if __name__ == '__main__':
                          'ComplexDenseNet2D169':ComplexDenseNet2D169,
                          'ComplexResNet1D18':ComplexResNet1D18,
                          'ComplexResNet1D34':ComplexResNet1D34,
-                         'ComplexResNet2D18':ComplexResNet2D18,
                          'ComplexResNet1D50':ComplexResNet1D50,
                          'ComplexDenseNet1D121':ComplexDenseNet1D121,
                          'ComplexDenseNet1D169':ComplexDenseNet1D169,
@@ -820,9 +854,9 @@ if __name__ == '__main__':
             search_models(x_list, y_list, [90, 9, 6, 5], path_save, **{'i':i, 'j':j})
 
     test_all_check_models(path_save, x_list=x_list, y_list=y_list, num_models=[90, 9, 6, 5], model_load=3,
-                            dict_model_load={**DICT_MODEL_CONFIG, **DICT_MODEL_STRUCT},
-                            kw_model='.hdf5',
-                            **DICT_MODEL_COMPILE)
+                          dict_model_load={**DICT_MODEL_CONFIG, **DICT_MODEL_STRUCT},
+                          kw_model='.hdf5',
+                          **DICT_MODEL_COMPILE)
     # --------------------------------------------------------------------------
     # for 1D magspectrum
     WIN_LENGTH = 10547
@@ -830,7 +864,7 @@ if __name__ == '__main__':
     path_save = os.path.join(PATH_SAVE_ROOT, f'magspectrum_{WIN_LENGTH}_{HOP_LENGTH}_or_rand')
     mkdir(path_save)
     x_list, y_list = load_data(path_root=PATH_ROOT, form_src='magspectrum', scaler_data='or', sub_set_way='rand',
-                                **{'win_length':WIN_LENGTH, 'hop_length':HOP_LENGTH})
+                               **{'win_length':WIN_LENGTH, 'hop_length':HOP_LENGTH})
     x_list, y_list = standar_data(x_list, y_list, 1, 2, test_few=False)
 
     for i in range(1, 2):
@@ -847,9 +881,9 @@ if __name__ == '__main__':
             search_models(x_list, y_list, [9, 6, 5], path_save, **{'i':i, 'j':j, 'subset_acc_name':subset_acc_name})
 
     test_all_check_models(path_save, x_list=x_list, y_list=y_list, num_models=[9, 6, 5], model_load=3,
-                            dict_model_load={**DICT_MODEL_CONFIG, **DICT_MODEL_STRUCT},
-                            kw_model='.hdf5',
-                            **DICT_MODEL_COMPILE)
+                          dict_model_load={**DICT_MODEL_CONFIG, **DICT_MODEL_STRUCT},
+                          kw_model='.hdf5',
+                          **DICT_MODEL_COMPILE)
     # --------------------------------------------------------------------------
     # for 2D magspectrum
     WIN_LIST = [264, 528, 1056, 1582, 2110, 2638, 3164]
@@ -874,12 +908,12 @@ if __name__ == '__main__':
 
         for i in range(1, 2):
             for j in range(-3, -4, -1):
-                search_models(x_list, y_list, [12, 13], path_save, **{'i':i, 'j':j, 'subset_acc_name':subset_acc_name})
+                search_models(x_list, y_list, [120, 12, 13, 10], path_save, **{'i':i, 'j':j, 'subset_acc_name':subset_acc_name})
 
-        test_all_check_models(path_save, x_list=x_list, y_list=y_list, num_models=[12, 13, 10], model_load=3,
-                                dict_model_load={**DICT_MODEL_CONFIG, **DICT_MODEL_STRUCT},
-                                kw_model='.hdf5',
-                                **DICT_MODEL_COMPILE)
+        test_all_check_models(path_save, x_list=x_list, y_list=y_list, num_models=[120, 12, 13, 10], model_load=3,
+                              dict_model_load={**DICT_MODEL_CONFIG, **DICT_MODEL_STRUCT},
+                              kw_model='.hdf5',
+                              **DICT_MODEL_COMPILE)
     # --------------------------------------------------------------------------
     # for log-mel spectrum
     WIN_LIST = [264, 528, 1056, 1582, 2110, 2638, 3164]
@@ -905,9 +939,9 @@ if __name__ == '__main__':
             y_list = [np.squeeze(y_i) for y_i in y_list]  # (n_samples, od)
             for i in range(1, 2):
                 for j in range(-3, -4, -1):
-                    search_models(x_list, y_list, [12, 13, 10], path_save, **{'i':i, 'j':j, 'subset_acc_name':subset_acc_name})
+                    search_models(x_list, y_list, [120, 12, 13, 10], path_save, **{'i':i, 'j':j, 'subset_acc_name':subset_acc_name})
 
-            test_all_check_models(path_save, x_list=x_list, y_list=y_list, num_models=[12, 13, 10], model_load=3,
+            test_all_check_models(path_save, x_list=x_list, y_list=y_list, num_models=[120, 12, 13, 10], model_load=3,
                                 dict_model_load={**DICT_MODEL_CONFIG, **DICT_MODEL_STRUCT},
                                 kw_model='.hdf5',
                                 **DICT_MODEL_COMPILE)
@@ -942,9 +976,9 @@ if __name__ == '__main__':
                 y_list = [np.squeeze(y_i) for y_i in y_list]  # (n_samples, od)
                 for i in range(1, 2):
                     for j in range(-3, -4, -1):
-                        search_models(x_list, y_list, [12, 13, 10], path_save, **{'i':i, 'j':j, 'subset_acc_name':subset_acc_name})
+                        search_models(x_list, y_list, [120, 12, 13, 10], path_save, **{'i':i, 'j':j, 'subset_acc_name':subset_acc_name})
 
-                test_all_check_models(path_save, x_list=x_list, y_list=y_list, num_models=[12, 13, 10], model_load=3,
+                test_all_check_models(path_save, x_list=x_list, y_list=y_list, num_models=[120, 12, 13, 10], model_load=3,
                                       dict_model_load={**DICT_MODEL_CONFIG, **DICT_MODEL_STRUCT},
                                       kw_model='.hdf5',
                                       **DICT_MODEL_COMPILE)
@@ -998,10 +1032,10 @@ if __name__ == '__main__':
 
         for i in range(1, 2):
             for j in range(-3, -4, -1):
-                search_models(x_list, y_list, [15, 16, 17, 18, 19], path_save, **{'i':i, 'j':j, 'subset_acc_name':subset_acc_name})
+                search_models(x_list, y_list, [150, 15, 16, 17, 18, 19], path_save, **{'i':i, 'j':j, 'subset_acc_name':subset_acc_name})
 
         test_all_check_models(path_save, x_list=x_list, y_list=y_list,
-                                num_models=[15, 16, 17, 18, 19], model_load=3,
+                                num_models=[150, 15, 16, 17, 18, 19], model_load=3,
                                 dict_model_load={**DICT_MODEL_CONFIG, **DICT_MODEL_STRUCT},
                                 kw_model='.hdf5',
                                 **DICT_MODEL_COMPILE)
@@ -1029,10 +1063,10 @@ if __name__ == '__main__':
 
         for i in range(1, 2):
             for j in range(-3, -4, -1):
-                search_models(x_list, y_list, [23, 24], path_save, **{'i':i, 'j':j, 'subset_acc_name':subset_acc_name})
+                search_models(x_list, y_list, [200, 20, 21, 22, 23, 24], path_save, **{'i':i, 'j':j, 'subset_acc_name':subset_acc_name})
 
         test_all_check_models(path_save, x_list=x_list, y_list=y_list,
-                              num_models=[20, 21, 22, 23, 24], model_load=3,
+                              num_models=[200, 20, 21, 22, 23, 24], model_load=3,
                               dict_model_load={**DICT_MODEL_CONFIG, **DICT_MODEL_STRUCT},
                               kw_model='.hdf5',
                               **DICT_MODEL_COMPILE)

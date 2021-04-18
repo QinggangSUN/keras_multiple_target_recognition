@@ -42,8 +42,11 @@ class ResNet1D(keras.Model):
 
     :param output_activation: int, activation of the output Dense layer of the classifer
 
+    :param dropout_fc : float, (optional), dropout rate of dense layer, defaults to None
+
     :return model: ResNet model with encoding output (if `include_top=False`) or classification
         output (if `include_top=True`)
+
 
     Usage:
         >>> from .resnet_blocks_1d import block_func
@@ -71,6 +74,7 @@ class ResNet1D(keras.Model):
                  classes=1000,
                  numerical_names=None,
                  output_activation=None,
+                 dropout_fc=None,
                  *args,
                  **kwargs
                 ):
@@ -132,6 +136,9 @@ class ResNet1D(keras.Model):
             else:
                 x = keras.layers.Dense(classes, activation=output_activation, name=f'fc{classes}')(x_complex)
 
+            if dropout_fc:
+                x = keras.layers.Dropout(dropout_fc)(x)
+
             super(ResNet1D, self).__init__(inputs=inputs, outputs=x, *args, **kwargs)
         else:
             # Else output each stages features
@@ -158,6 +165,8 @@ class ResNet1D18(ResNet1D):
     :param classes: int, number of classes to classify (include_top must be true)
 
     :param output_activation: int, activation of the output Dense layer of the classifer
+
+    :param dropout_fc : float, (optional), dropout rate of dense layer, defaults to None
 
     :return model: ResNet model with encoding output (if `include_top=False`) or classification
         output (if `include_top=True`)
@@ -186,6 +195,7 @@ class ResNet1D18(ResNet1D):
                  classes=1000,
                  numerical_names=None,
                  output_activation='sigmoid',
+                 dropout_fc=None,
                  *args,
                  **kwargs
                 ):
@@ -204,6 +214,7 @@ class ResNet1D18(ResNet1D):
             classes,
             numerical_names,
             output_activation,
+            dropout_fc,
             *args,
             **kwargs
         )
@@ -229,6 +240,8 @@ class ResNet1D34(ResNet1D):
     :param classes: int, number of classes to classify (include_top must be true)
 
     :param output_activation: int, activation of the output Dense layer of the classifer
+
+    :param dropout_fc : float, (optional), dropout rate of dense layer, defaults to None
 
     :return model: ResNet model with encoding output (if `include_top=False`) or classification
         output (if `include_top=True`)
@@ -257,6 +270,7 @@ class ResNet1D34(ResNet1D):
                  classes=1000,
                  numerical_names=None,
                  output_activation='sigmoid',
+                 dropout_fc=None,
                  *args,
                  **kwargs
                 ):
@@ -275,6 +289,7 @@ class ResNet1D34(ResNet1D):
             classes,
             numerical_names,
             output_activation,
+            dropout_fc,
             *args,
             **kwargs
         )
@@ -300,6 +315,8 @@ class ResNet1D50(ResNet1D):
     :param classes: int, number of classes to classify (include_top must be true)
 
     :param output_activation: int, activation of the output Dense layer of the classifer
+
+    :param dropout_fc : float, (optional), dropout rate of dense layer, defaults to None
 
     :return model: ResNet model with encoding output (if `include_top=False`) or classification
         output (if `include_top=True`)
@@ -328,6 +345,7 @@ class ResNet1D50(ResNet1D):
                  classes=1000,
                  numerical_names=None,
                  output_activation='sigmoid',
+                 dropout_fc=None,
                  *args,
                  **kwargs
                 ):
@@ -348,6 +366,7 @@ class ResNet1D50(ResNet1D):
             classes,
             numerical_names,
             output_activation,
+            dropout_fc,
             *args,
             **kwargs
         )
@@ -373,6 +392,8 @@ class ResNet1D101(ResNet1D):
     :param classes: int, number of classes to classify (include_top must be true)
 
     :param output_activation: int, activation of the output Dense layer of the classifer
+
+    :param dropout_fc : float, (optional), dropout rate of dense layer, defaults to None
 
     :return model: ResNet model with encoding output (if `include_top=False`) or classification
         output (if `include_top=True`)
@@ -402,6 +423,7 @@ class ResNet1D101(ResNet1D):
             classes=1000,
             numerical_names=None,
             output_activation='sigmoid',
+            dropout_fc=None,
             *args,
             **kwargs):
 
@@ -421,6 +443,7 @@ class ResNet1D101(ResNet1D):
             classes,
             numerical_names,
             output_activation,
+            dropout_fc,
             *args,
             **kwargs
         )
@@ -446,6 +469,8 @@ class ResNet1D152(ResNet1D):
     :param classes: int, number of classes to classify (include_top must be true)
 
     :param output_activation: int, activation of the output Dense layer of the classifer
+
+    :param dropout_fc : float, (optional), dropout rate of dense layer, defaults to None
 
     :return model: ResNet model with encoding output (if `include_top=False`) or classification
         output (if `include_top=True`)
@@ -475,6 +500,7 @@ class ResNet1D152(ResNet1D):
             classes=1000,
             numerical_names=None,
             output_activation='sigmoid',
+            dropout_fc=None,
             *args,
             **kwargs):
 
@@ -494,6 +520,7 @@ class ResNet1D152(ResNet1D):
             classes,
             numerical_names,
             output_activation,
+            dropout_fc,
             *args,
             **kwargs
         )
@@ -519,6 +546,8 @@ class ResNet1D200(ResNet1D):
     :param classes: int, number of classes to classify (include_top must be true)
 
     :param output_activation: int, activation of the output Dense layer of the classifer
+
+    :param dropout_fc : float, (optional), dropout rate of dense layer, defaults to None
 
     :return model: ResNet model with encoding output (if `include_top=False`) or classification
         output (if `include_top=True`)
@@ -548,6 +577,7 @@ class ResNet1D200(ResNet1D):
             classes=1000,
             numerical_names=None,
             output_activation='sigmoid',
+            dropout_fc=None,
             *args,
             **kwargs):
 
@@ -567,6 +597,7 @@ class ResNet1D200(ResNet1D):
             classes,
             numerical_names,
             output_activation,
+            dropout_fc,
             *args,
             **kwargs
         )

@@ -14,6 +14,7 @@ if __name__ == '__main__':
     import json
     from keras import backend as K
     from keras import optimizers
+    import keras.regularizers
     from keras.callbacks import Callback, TensorBoard, ModelCheckpoint
     from keras.layers import Input
     from keras.models import load_model, Model
@@ -53,10 +54,23 @@ if __name__ == '__main__':
     SESS = tf.Session(graph=tf.get_default_graph(), config=SESSION_CONF)
     K.set_session(SESS)
 
-    N_GPU = 2
+    MODEL_STRUCT_CONFIG = {'output_activation':'linear',
+                           'dropout_fc':None}
+
+    MODEL_STRUCT_CONFIG_RESNET = {'output_activation':'linear',
+                                  'dropout_fc':None,
+                                  'parameters':{'kernel_initializer':'he_normal'}
+                                 }
+    MODEL_STRUCT_CONFIG_RESNET = {'output_activation':'linear',
+                                  'dropout_fc':None,
+                                  'parameters':{'kernel_initializer':'he_normal',
+                                                'kernel_regularizer':keras.regularizers.l2(1e-4)}
+                                 }
+
+    N_GPU = 1
 
     def create_model(x_list, y_list, num_model, n_gpu=1):
-        """Create model.
+        """Create model for test model.
         Args:
             x_list (list[np.array]): input datasets.
             y_list (list[np.array]): output datasets.
@@ -70,47 +84,54 @@ if __name__ == '__main__':
         od = y_list[1].shape[-1]
 
         if num_model == 90:
-            model = build_model90(d1, d2, od)  # ResNet 1D 10
+            model = build_model90(d1, d2, od, **MODEL_STRUCT_CONFIG_RESNET)  # ResNet 1D 10
         elif num_model == 9:
-            model = build_model9(d1, d2, od)  # ResNet 1D 18
+            model = build_model9(d1, d2, od, **MODEL_STRUCT_CONFIG_RESNET)  # ResNet 1D 18
         elif num_model == 6:
-            model = build_model6(d1, d2, od)  # ResNet 1D 34
+            model = build_model6(d1, d2, od, **MODEL_STRUCT_CONFIG_RESNET)  # ResNet 1D 34
         elif num_model == 5:
-            model = build_model5(d1, d2, od)  # ResNet 1D 50
+            model = build_model5(d1, d2, od, **MODEL_STRUCT_CONFIG_RESNET)  # ResNet 1D 50
 
+        elif num_model == 120:
+            model = build_model120(d1, d2, od, **MODEL_STRUCT_CONFIG_RESNET)  # ResNet 2D 10
         elif num_model == 12:
-            model = build_model12(d1, d2, od)  # ResNet 2D 18
+            model = build_model12(d1, d2, od, **MODEL_STRUCT_CONFIG_RESNET)  # ResNet 2D 18
         elif num_model == 13:
-            model = build_model13(d1, d2, od)  # ResNet 2D 34
+            model = build_model13(d1, d2, od, **MODEL_STRUCT_CONFIG_RESNET)  # ResNet 2D 34
         elif num_model == 10:
-            model = build_model10(d1, d2, od)  # ResNet 2D 50
+            model = build_model10(d1, d2, od, **MODEL_STRUCT_CONFIG_RESNET)  # ResNet 2D 50
 
+        elif num_model == 150:
+            model = build_model150(d1, d2, od, **MODEL_STRUCT_CONFIG)  # Complex ResNet 2D 10
         elif num_model == 15:
-            model = build_model15(d1, d2, od)  # Complex ResNet 2D 18
+            model = build_model15(d1, d2, od, **MODEL_STRUCT_CONFIG)  # Complex ResNet 2D 18
         elif num_model == 16:
-            model = build_model16(d1, d2, od)  # Complex ResNet 2D 34
+            model = build_model16(d1, d2, od, **MODEL_STRUCT_CONFIG)  # Complex ResNet 2D 34
         elif num_model == 17:
-            model = build_model17(d1, d2, od)  # Complex ResNet 2D 50
+            model = build_model17(d1, d2, od, **MODEL_STRUCT_CONFIG)  # Complex ResNet 2D 50
         elif num_model == 18:
-            model = build_model18(d1, d2, od)  # Complex DenseNet 2D 121
+            model = build_model18(d1, d2, od, **MODEL_STRUCT_CONFIG)  # Complex DenseNet 2D 121
         elif num_model == 19:
-            model = build_model19(d1, d2, od)  # Complex DenseNet 2D 169
+            model = build_model19(d1, d2, od, **MODEL_STRUCT_CONFIG)  # Complex DenseNet 2D 169
 
+        elif num_model == 200:
+            model = build_model200(d1, od, **MODEL_STRUCT_CONFIG)  # Complex ResNet 1D 10
         elif num_model == 20:
-            model = build_model20(d1, od)  # Complex ResNet 1D 18
+            model = build_model20(d1, od, **MODEL_STRUCT_CONFIG)  # Complex ResNet 1D 18
         elif num_model == 21:
-            model = build_model21(d1, od)  # Complex ResNet 1D 34
+            model = build_model21(d1, od, **MODEL_STRUCT_CONFIG)  # Complex ResNet 1D 34
         elif num_model == 22:
-            model = build_model22(d1, od)  # Complex ResNet 1D 50
+            model = build_model22(d1, od, **MODEL_STRUCT_CONFIG)  # Complex ResNet 1D 50
         elif num_model == 23:
-            model = build_model23(d1, od)  # Complex DenseNet 1D 121
+            model = build_model23(d1, od, **MODEL_STRUCT_CONFIG)  # Complex DenseNet 1D 121
         elif num_model == 24:
-            model = build_model24(d1, od)  # Complex DenseNet 1D 169
+            model = build_model24(d1, od, **MODEL_STRUCT_CONFIG)  # Complex DenseNet 1D 169
 
-        if num_model in list(range(15, 25)) and n_gpu > 1:
+        if num_model in list(range(15, 25))+[150, 200] and n_gpu > 1:
             inputs = Input(shape=(d1, d2, 2))
             target = model(inputs)
             model = Model(inputs, [target])
+
         return model
 
     def test_model(model, x_list, y_list, pbs, modelname, path_save, **kwargs):
@@ -229,7 +250,7 @@ if __name__ == '__main__':
             # NOT work, if tensorflow verion < 2.1.0 and using subclass model from keras.Model
             model_file_name = list_files_end_str(path_save_model, '.h5', False)[0]
             check_model = load_model(os.path.join(path_save_model, model_file_name),
-                                        **{'custom_objects':dict_model_load})
+                                     **{'custom_objects':dict_model_load})
 
         if mode_load == 2:  # load model struct by model_from_json
             # this way will not work, if tensorflow verion < 2.1.0 and using subclass model from keras.Model
@@ -549,10 +570,15 @@ if __name__ == '__main__':
 
         return x_list, y_list
 
-    from models.models_recognition import build_model5, build_model6, build_model7, build_model8, build_model9, build_model90
-    from models.models_recognition import build_model10, build_model11, build_model12, build_model13, build_model14
-    from models.models_recognition import build_model15, build_model16, build_model17, build_model18, build_model19
-    from models.models_recognition import build_model20, build_model21, build_model22, build_model23, build_model24
+    from models.models_recognition import build_model, build_model2, build_model3, build_model4
+    from models.models_recognition import build_model90, build_model9, build_model6, build_model5
+    from models.models_recognition import build_model7, build_model8
+    from models.models_recognition import build_model120, build_model12, build_model13, build_model10
+    from models.models_recognition import build_model11, build_model14
+    from models.models_recognition import build_model150, build_model15, build_model16, build_model17
+    from models.models_recognition import build_model18, build_model19
+    from models.models_recognition import build_model200, build_model20, build_model21, build_model22
+    from models.models_recognition import build_model23, build_model24
 
     def search_models(x_list, y_list, model_list, path_save, **kwargs):
         """train the models.
@@ -575,7 +601,7 @@ if __name__ == '__main__':
         i, j = kwargs['i'], kwargs['j']
 
         if 90 in model_list:
-            model90 = build_model90(d1, d2, od, **{'output_activation':'linear'})  # ResNet 1D 10
+            model90 = build_model90(d1, d2, od, **MODEL_STRUCT_CONFIG_RESNET)  # ResNet 1D 10
             path_result = os.path.join(path_save, 'model_90_1_1')
             paras = {'i':i, 'j':j, 'epochs':100, 'batch_size':64, 'n_gpu':N_GPU}
             train_model(model=model90, paras=paras, x_list=x_list, y_list=y_list, path_save=path_result)
@@ -583,7 +609,7 @@ if __name__ == '__main__':
             gc.collect()
 
         if 9 in model_list:
-            model9 = build_model9(d1, d2, od, **{'output_activation':'linear'})  # ResNet 1D 18
+            model9 = build_model9(d1, d2, od, **MODEL_STRUCT_CONFIG_RESNET)  # ResNet 1D 18
             path_result = os.path.join(path_save, 'model_9_1_1')
             paras = {'i':i, 'j':j, 'epochs':100, 'batch_size':64, 'n_gpu':N_GPU}
             train_model(model=model9, paras=paras, x_list=x_list, y_list=y_list, path_save=path_result)
@@ -591,7 +617,7 @@ if __name__ == '__main__':
             gc.collect()
 
         if 6 in model_list:
-            model6 = build_model6(d1, d2, od, **{'output_activation':'linear'})  # ResNet 1D 34
+            model6 = build_model6(d1, d2, od, **MODEL_STRUCT_CONFIG)  # ResNet 1D 34
             path_result = os.path.join(path_save, 'model_6_1_1')
             paras = {'i':i, 'j':j, 'epochs':100, 'batch_size':64, 'n_gpu':N_GPU}
             train_model(model=model6, paras=paras, x_list=x_list, y_list=y_list, path_save=path_result)
@@ -599,7 +625,7 @@ if __name__ == '__main__':
             gc.collect()
 
         if 5 in model_list:
-            model5 = build_model5(d1, d2, od, **{'output_activation':'linear'})  # ResNet 1D 50
+            model5 = build_model5(d1, d2, od, **MODEL_STRUCT_CONFIG_RESNET)  # ResNet 1D 50
             path_result = os.path.join(path_save, 'model_5_1_1')
             paras = {'i':i, 'j':j, 'epochs':100, 'batch_size':64, 'n_gpu':N_GPU}
             train_model(model=model5, paras=paras, x_list=x_list, y_list=y_list, path_save=path_result)
@@ -607,7 +633,7 @@ if __name__ == '__main__':
             gc.collect()
 
         if 7 in model_list:
-            model7 = build_model7(d1, d2, od, **{'output_activation':'linear'})  # DenseNet 1D 121
+            model7 = build_model7(d1, d2, od, **MODEL_STRUCT_CONFIG)  # DenseNet 1D 121
             path_result = os.path.join(path_save, 'model_7_1_1')
             paras = {'i':i, 'j':j, 'epochs':100, 'batch_size':64, 'n_gpu':N_GPU}
             train_model(model=model7, paras=paras, x_list=x_list, y_list=y_list, path_save=path_result)
@@ -615,15 +641,23 @@ if __name__ == '__main__':
             gc.collect()
 
         if 8 in model_list:
-            model8 = build_model8(d1, d2, od, **{'output_activation':'linear'})  # DenseNet 1D 169
+            model8 = build_model8(d1, d2, od, **MODEL_STRUCT_CONFIG)  # DenseNet 1D 169
             path_result = os.path.join(path_save, 'model_8_1_1')
             paras = {'i':i, 'j':j, 'epochs':100, 'batch_size':64, 'n_gpu':N_GPU}
             train_model(model=model8, paras=paras, x_list=x_list, y_list=y_list, path_save=path_result)
             del model8
             gc.collect()
 
+        if 120 in model_list:
+            model120 = build_model120(d1, d2, od, **MODEL_STRUCT_CONFIG_RESNET)  # ResNet 2D 10
+            path_result = os.path.join(path_save, 'model_120_1_1')
+            paras = {'i':i, 'j':j, 'epochs':100, 'batch_size':10, 'n_gpu':N_GPU, 'test_check_models':False}
+            train_model(model=model120, x_list=x_list, y_list=y_list, paras=paras, path_save=path_result)
+            del model120
+            gc.collect()
+
         if 12 in model_list:
-            model12 = build_model12(d1, d2, od, **{'output_activation':'linear'})  # ResNet 2D 18
+            model12 = build_model12(d1, d2, od, **MODEL_STRUCT_CONFIG_RESNET)  # ResNet 2D 18
             path_result = os.path.join(path_save, 'model_12_1_1')
             paras = {'i':i, 'j':j, 'epochs':100, 'batch_size':10, 'n_gpu':N_GPU, 'test_check_models':False}
             train_model(model=model12, x_list=x_list, y_list=y_list, paras=paras, path_save=path_result)
@@ -631,7 +665,7 @@ if __name__ == '__main__':
             gc.collect()
 
         if 13 in model_list:
-            model13 = build_model13(d1, d2, od, **{'output_activation':'linear'})  # ResNet 2D 34
+            model13 = build_model13(d1, d2, od, **MODEL_STRUCT_CONFIG_RESNET)  # ResNet 2D 34
             path_result = os.path.join(path_save, 'model_13_1_1')
             paras = {'i':i, 'j':j, 'epochs':100, 'batch_size':10, 'n_gpu':N_GPU, 'test_check_models':False}
             train_model(model=model13, x_list=x_list, y_list=y_list, paras=paras, path_save=path_result)
@@ -639,7 +673,7 @@ if __name__ == '__main__':
             gc.collect()
 
         if 10 in model_list:
-            model10 = build_model10(d1, d2, od, **{'output_activation':'linear'})  # ResNet 2D 50
+            model10 = build_model10(d1, d2, od, **MODEL_STRUCT_CONFIG_RESNET)  # ResNet 2D 50
             path_result = os.path.join(path_save, 'model_10_1_1')
             paras = {'i':i, 'j':j, 'epochs':100, 'batch_size':10, 'n_gpu':N_GPU}
             train_model(model=model10, x_list=x_list, y_list=y_list, paras=paras, path_save=path_result)
@@ -647,7 +681,7 @@ if __name__ == '__main__':
             gc.collect()
 
         if 11 in model_list:
-            model11 = build_model11(d1, d2, od, **{'output_activation':'linear'})  # DenseNet 2D 121
+            model11 = build_model11(d1, d2, od, **MODEL_STRUCT_CONFIG)  # DenseNet 2D 121
             path_result = os.path.join(path_save, 'model_11_1_1')
             paras = {'i':i, 'j':j, 'epochs':100, 'batch_size':10, 'n_gpu':N_GPU}
             train_model(model=model11, x_list=x_list, y_list=y_list, paras=paras, path_save=path_result)
@@ -655,15 +689,23 @@ if __name__ == '__main__':
             gc.collect()
 
         if 14 in model_list:
-            model14 = build_model14(d1, d2, od, **{'output_activation':'linear'})  # DenseNet 2D 169
+            model14 = build_model14(d1, d2, od, **MODEL_STRUCT_CONFIG)  # DenseNet 2D 169
             path_result = os.path.join(path_save, 'model_14_1_1')
             paras = {'i':i, 'j':j, 'epochs':100, 'batch_size':10, 'n_gpu':N_GPU}
             train_model(model=model14, x_list=x_list, y_list=y_list, paras=paras, path_save=path_result)
             del model14
             gc.collect()
 
+        if 150 in model_list:
+            model150 = build_model150(d1, d2, od, **MODEL_STRUCT_CONFIG)  # Complex ResNet 2D 10
+            path_result = os.path.join(path_save, 'model_150_1_1')
+            paras = {'i':i, 'j':j, 'epochs':100, 'batch_size':8, 'n_gpu':N_GPU}
+            train_model(model=model150, x_list=x_list, y_list=y_list, paras=paras, path_save=path_result)
+            del model150
+            gc.collect()
+
         if 15 in model_list:
-            model15 = build_model15(d1, d2, od, **{'output_activation':'linear'})  # Complex ResNet 2D 18
+            model15 = build_model15(d1, d2, od, **MODEL_STRUCT_CONFIG)  # Complex ResNet 2D 18
             path_result = os.path.join(path_save, 'model_15_1_1')
             paras = {'i':i, 'j':j, 'epochs':100, 'batch_size':8, 'n_gpu':N_GPU}
             train_model(model=model15, x_list=x_list, y_list=y_list, paras=paras, path_save=path_result)
@@ -671,7 +713,7 @@ if __name__ == '__main__':
             gc.collect()
 
         if 16 in model_list:
-            model16 = build_model16(d1, d2, od, **{'output_activation':'linear'})  # Complex ResNet 2D 34
+            model16 = build_model16(d1, d2, od, **MODEL_STRUCT_CONFIG)  # Complex ResNet 2D 34
             path_result = os.path.join(path_save, 'model_16_1_1')
             paras = {'i':i, 'j':j, 'epochs':100, 'batch_size':8, 'n_gpu':N_GPU}
             train_model(model=model16, x_list=x_list, y_list=y_list, paras=paras, path_save=path_result)
@@ -679,7 +721,7 @@ if __name__ == '__main__':
             gc.collect()
 
         if 17 in model_list:
-            model17 = build_model17(d1, d2, od, **{'output_activation':'linear'})  # Complex ResNet 2D 50
+            model17 = build_model17(d1, d2, od, **MODEL_STRUCT_CONFIG)  # Complex ResNet 2D 50
             path_result = os.path.join(path_save, 'model_17_1_1')
             paras = {'i':i, 'j':j, 'epochs':100, 'batch_size':8, 'n_gpu':N_GPU}
             train_model(model=model17, x_list=x_list, y_list=y_list, paras=paras, path_save=path_result)
@@ -687,7 +729,7 @@ if __name__ == '__main__':
             gc.collect()
 
         if 18 in model_list:
-            model18 = build_model18(d1, d2, od, **{'output_activation':'linear'})  # Complex DenseNet 2D 121
+            model18 = build_model18(d1, d2, od, **MODEL_STRUCT_CONFIG)  # Complex DenseNet 2D 121
             path_result = os.path.join(path_save, 'model_18_1_1')
             paras = {'i':i, 'j':j, 'epochs':100, 'batch_size':8, 'n_gpu':N_GPU}
             train_model(model=model18, x_list=x_list, y_list=y_list, paras=paras, path_save=path_result)
@@ -695,15 +737,23 @@ if __name__ == '__main__':
             gc.collect()
 
         if 19 in model_list:
-            model19 = build_model19(d1, d2, od, **{'output_activation':'linear'})  # Complex DenseNet 2D 169
+            model19 = build_model19(d1, d2, od, **MODEL_STRUCT_CONFIG)  # Complex DenseNet 2D 169
             path_result = os.path.join(path_save, 'model_19_1_1')
             paras = {'i':i, 'j':j, 'epochs':100, 'batch_size':8, 'n_gpu':N_GPU}
             train_model(model=model19, x_list=x_list, y_list=y_list, paras=paras, path_save=path_result)
             del model19
             gc.collect()
 
+        if 200 in model_list:
+            model200 = build_model200(d1, od, **MODEL_STRUCT_CONFIG)  # Complex ResNet 1D 18
+            path_result = os.path.join(path_save, 'model_200_1_1')
+            paras = {'i':i, 'j':j, 'epochs':100, 'batch_size':8, 'n_gpu':N_GPU}
+            train_model(model=model200, x_list=x_list, y_list=y_list, paras=paras, path_save=path_result)
+            del model200
+            gc.collect()
+
         if 20 in model_list:
-            model20 = build_model20(d1, od, **{'output_activation':'linear'})  # Complex ResNet 1D 18
+            model20 = build_model20(d1, od, **MODEL_STRUCT_CONFIG)  # Complex ResNet 1D 18
             path_result = os.path.join(path_save, 'model_20_1_1')
             paras = {'i':i, 'j':j, 'epochs':100, 'batch_size':8, 'n_gpu':N_GPU}
             train_model(model=model20, x_list=x_list, y_list=y_list, paras=paras, path_save=path_result)
@@ -711,7 +761,7 @@ if __name__ == '__main__':
             gc.collect()
 
         if 21 in model_list:
-            model21 = build_model21(d1, od, **{'output_activation':'linear'})  # Complex ResNet 1D 34
+            model21 = build_model21(d1, od, **MODEL_STRUCT_CONFIG)  # Complex ResNet 1D 34
             path_result = os.path.join(path_save, 'model_21_1_1')
             paras = {'i':i, 'j':j, 'epochs':100, 'batch_size':8, 'n_gpu':N_GPU}
             train_model(model=model21, x_list=x_list, y_list=y_list, paras=paras, path_save=path_result)
@@ -719,7 +769,7 @@ if __name__ == '__main__':
             gc.collect()
 
         if 22 in model_list:
-            model22 = build_model22(d1, od, **{'output_activation':'linear'})  # Complex ResNet 1D 50
+            model22 = build_model22(d1, od, **MODEL_STRUCT_CONFIG)  # Complex ResNet 1D 50
             path_result = os.path.join(path_save, 'model_22_1_1')
             paras = {'i':i, 'j':j, 'epochs':100, 'batch_size':8, 'n_gpu':N_GPU}
             train_model(model=model22, x_list=x_list, y_list=y_list, paras=paras, path_save=path_result)
@@ -727,7 +777,7 @@ if __name__ == '__main__':
             gc.collect()
 
         if 23 in model_list:
-            model23 = build_model23(d1, od, **{'output_activation':'linear'})  # Complex DenseNet 1D 121
+            model23 = build_model23(d1, od, **MODEL_STRUCT_CONFIG)  # Complex DenseNet 1D 121
             path_result = os.path.join(path_save, 'model_23_1_1')
             paras = {'i':i, 'j':j, 'epochs':100, 'batch_size':8, 'n_gpu':N_GPU}
             train_model(model=model23, x_list=x_list, y_list=y_list, paras=paras, path_save=path_result)
@@ -735,7 +785,7 @@ if __name__ == '__main__':
             gc.collect()
 
         if 24 in model_list:
-            model24 = build_model24(d1, od, **{'output_activation':'linear'})  # Complex DenseNet 1D 169
+            model24 = build_model24(d1, od, **MODEL_STRUCT_CONFIG)  # Complex DenseNet 1D 169
             path_result = os.path.join(path_save, 'model_24_1_1')
             paras = {'i':i, 'j':j, 'epochs':100, 'batch_size':8, 'n_gpu':N_GPU}
             train_model(model=model24, x_list=x_list, y_list=y_list, paras=paras, path_save=path_result)
@@ -767,7 +817,6 @@ if __name__ == '__main__':
                          'ComplexDenseNet2D169':ComplexDenseNet2D169,
                          'ComplexResNet1D18':ComplexResNet1D18,
                          'ComplexResNet1D34':ComplexResNet1D34,
-                         'ComplexResNet2D18':ComplexResNet2D18,
                          'ComplexResNet1D50':ComplexResNet1D50,
                          'ComplexDenseNet1D121':ComplexDenseNet1D121,
                          'ComplexDenseNet1D169':ComplexDenseNet1D169,
@@ -909,25 +958,22 @@ if __name__ == '__main__':
                                            **{'win_length':win_i, 'hop_length':hop_i, 'n_mels':n_mels_i, 'n_mfcc':n_mfcc_i})
                 x_list, y_list = standar_data(x_list, y_list, 2, 2, test_few=False)
 
-                test_all_check_models(path_save, x_list=x_list, y_list=y_list, num_models=[11, 14], model_load=0,
-                                    dict_model_load=DICT_MODEL_CONFIG)
-
                 for i in range(1, 2):
                     for j in range(-3, -4, -1):
                         search_models(x_list, y_list, [11, 14], path_save, **{'i':i, 'j':j})
 
                 test_all_check_models(path_save, x_list=x_list, y_list=y_list, num_models=[11, 14], model_load=0,
-                                    dict_model_load=DICT_MODEL_CONFIG)
+                                      dict_model_load=DICT_MODEL_CONFIG)
 
                 y_list = [np.squeeze(y_i) for y_i in y_list]  # (n_samples, od)
                 for i in range(1, 2):
                     for j in range(-3, -4, -1):
-                        search_models(x_list, y_list, [12, 13, 10], path_save, **{'i':i, 'j':j})
+                        search_models(x_list, y_list, [120, 12, 13, 10], path_save, **{'i':i, 'j':j})
 
-                test_all_check_models(path_save, x_list=x_list, y_list=y_list, num_models=[12, 13, 10], model_load=3,
-                                    dict_model_load={**DICT_MODEL_CONFIG, **DICT_MODEL_STRUCT},
-                                    kw_model='.hdf5',
-                                    **DICT_MODEL_COMPILE)
+                test_all_check_models(path_save, x_list=x_list, y_list=y_list, num_models=[120, 12, 13, 10], model_load=3,
+                                      dict_model_load={**DICT_MODEL_CONFIG, **DICT_MODEL_STRUCT},
+                                      kw_model='.hdf5',
+                                      **DICT_MODEL_COMPILE)
     # --------------------------------------------------------------------------
     # for demon feature
     HIGH_LIST = [7910.1]
@@ -978,10 +1024,10 @@ if __name__ == '__main__':
 
         for i in range(1, 2):
             for j in range(-3, -4, -1):
-                search_models(x_list, y_list, [15, 16, 17, 18, 19], path_save, **{'i':i, 'j':j})  # 15, 16, 17, 18, 19
+                search_models(x_list, y_list, [150, 15, 16, 17, 18, 19], path_save, **{'i':i, 'j':j})  # 15, 16, 17, 18, 19
 
                 test_all_check_models(path_save, x_list=x_list, y_list=y_list,
-                                      num_models=[15, 16, 17, 18, 19], model_load=3,
+                                      num_models=[150, 15, 16, 17, 18, 19], model_load=3,
                                       dict_model_load={**DICT_MODEL_CONFIG, **DICT_MODEL_STRUCT},
                                       kw_model='.hdf5',
                                       **DICT_MODEL_COMPILE)
@@ -1009,10 +1055,10 @@ if __name__ == '__main__':
 
         for i in range(1, 2):
             for j in range(-3, -4, -1):
-                search_models(x_list, y_list, [20, 21, 22, 23, 24], path_save, **{'i':i, 'j':j})
+                search_models(x_list, y_list, [200, 20, 21, 22, 23, 24], path_save, **{'i':i, 'j':j})
 
                 test_all_check_models(path_save, x_list=x_list, y_list=y_list,
-                                      num_models=[20, 21, 22, 23, 24], model_load=3,
+                                      num_models=[200, 20, 21, 22, 23, 24], model_load=3,
                                       dict_model_load={**DICT_MODEL_CONFIG, **DICT_MODEL_STRUCT},
                                       kw_model='.hdf5',
                                       **DICT_MODEL_COMPILE)

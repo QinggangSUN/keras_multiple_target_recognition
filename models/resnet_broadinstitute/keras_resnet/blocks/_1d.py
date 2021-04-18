@@ -12,11 +12,6 @@ import keras.regularizers
 
 import keras_resnet.layers
 
-parameters = {
-    "kernel_initializer": "he_normal"
-}
-
-
 def basic_1d(
     filters,
     stage=0,
@@ -24,7 +19,8 @@ def basic_1d(
     kernel_size=3,
     numerical_name=False,
     stride=None,
-    freeze_bn=False
+    freeze_bn=False,
+    parameters={"kernel_initializer": "he_normal"}
 ):
     """
     A one-dimensional basic block.
@@ -42,6 +38,8 @@ def basic_1d(
     :param stride: int representing the stride used in the shortcut and the first conv layer, default derives stride from block id
 
     :param freeze_bn: if true, freezes BatchNormalization layers (ie. no updates are done in these layers)
+
+    :param parameters: parameters for conv layers in blocks
 
     Usage:
 
@@ -154,7 +152,8 @@ def bottleneck_1d(
     kernel_size=3,
     numerical_name=False,
     stride=None,
-    freeze_bn=False
+    freeze_bn=False,
+    parameters={"kernel_initializer": "he_normal"}
 ):
     """
     A one-dimensional bottleneck block.
@@ -172,6 +171,8 @@ def bottleneck_1d(
     :param stride: int representing the stride used in the shortcut and the first conv layer, default derives stride from block id
 
     :param freeze_bn: if true, freezes BatchNormalization layers (ie. no updates are done in these layers)
+
+    :param parameters: parameters for conv layers in blocks
 
     Usage:
 
