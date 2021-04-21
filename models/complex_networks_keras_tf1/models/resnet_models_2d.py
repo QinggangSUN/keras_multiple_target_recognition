@@ -44,6 +44,8 @@ class ResNet2D(keras.Model):
 
     :param dropout_fc : float, (optional), dropout rate of dense layer, defaults to None
 
+    :param parameters: parameters for conv layers in blocks
+
     :return model: ResNet model with encoding output (if `include_top=False`) or classification
         output (if `include_top=True`)
 
@@ -72,6 +74,7 @@ class ResNet2D(keras.Model):
                  numerical_names=None,
                  output_activation=None,
                  dropout_fc=None,
+                 parameters=None,
                  *args,
                  **kwargs
                 ):
@@ -81,7 +84,7 @@ class ResNet2D(keras.Model):
             numerical_names = [True] * len(num_blocks)
 
         x_complex = ComplexConv2D(n_filters, 7, strides=(2, 2), padding='same', use_bias=False,
-                                  spectral_parametrization=False, name='conv1')(inputs)
+                                  spectral_parametrization=False, name='conv1', **parameters)(inputs)
 
         x_complex = ComplexBatchNormalization(axis=axis, epsilon=1e-5, name='bn_conv1')(x_complex)
 
@@ -102,7 +105,8 @@ class ResNet2D(keras.Model):
                     stage_id,
                     block_id,
                     numerical_name=(block_id > 0 and numerical_names[stage_id]),
-                    activation=activation
+                    activation=activation,
+                    **parameters
                 )(x_complex)
 
             n_filters *= 2
@@ -164,6 +168,8 @@ class ResNet2D18(ResNet2D):
 
     :param dropout_fc : float, (optional), dropout rate of dense layer, defaults to None
 
+    :param parameters: parameters for conv layers in blocks
+
     :return model: ResNet model with encoding output (if `include_top=False`) or classification
         output (if `include_top=True`)
 
@@ -192,6 +198,7 @@ class ResNet2D18(ResNet2D):
                  numerical_names=None,
                  output_activation='sigmoid',
                  dropout_fc=None,
+                 parameters=None,
                  *args,
                  **kwargs
                 ):
@@ -211,6 +218,7 @@ class ResNet2D18(ResNet2D):
             numerical_names,
             output_activation,
             dropout_fc,
+            parameters,
             *args,
             **kwargs
         )
@@ -238,6 +246,8 @@ class ResNet2D34(ResNet2D):
     :param output_activation: int, activation of the output Dense layer of the classifer
 
     :param dropout_fc : float, (optional), dropout rate of dense layer, defaults to None
+
+    :param parameters: parameters for conv layers in blocks
 
     :return model: ResNet model with encoding output (if `include_top=False`) or classification
         output (if `include_top=True`)
@@ -267,6 +277,7 @@ class ResNet2D34(ResNet2D):
                  numerical_names=None,
                  output_activation='sigmoid',
                  dropout_fc=None,
+                 parameters=None,
                  *args,
                  **kwargs
                 ):
@@ -286,6 +297,7 @@ class ResNet2D34(ResNet2D):
             numerical_names,
             output_activation,
             dropout_fc,
+            parameters,
             *args,
             **kwargs
         )
@@ -313,6 +325,8 @@ class ResNet2D50(ResNet2D):
     :param output_activation: int, activation of the output Dense layer of the classifer
 
     :param dropout_fc : float, (optional), dropout rate of dense layer, defaults to None
+
+    :param parameters: parameters for conv layers in blocks
 
     :return model: ResNet model with encoding output (if `include_top=False`) or classification
         output (if `include_top=True`)
@@ -342,6 +356,7 @@ class ResNet2D50(ResNet2D):
                  numerical_names=None,
                  output_activation='sigmoid',
                  dropout_fc=None,
+                 parameters=None,
                  *args,
                  **kwargs
                 ):
@@ -363,6 +378,7 @@ class ResNet2D50(ResNet2D):
             numerical_names,
             output_activation,
             dropout_fc,
+            parameters,
             *args,
             **kwargs
         )
@@ -390,6 +406,8 @@ class ResNet2D101(ResNet2D):
     :param output_activation: int, activation of the output Dense layer of the classifer
 
     :param dropout_fc : float, (optional), dropout rate of dense layer, defaults to None
+
+    :param parameters: parameters for conv layers in blocks
 
     :return model: ResNet model with encoding output (if `include_top=False`) or classification
         output (if `include_top=True`)
@@ -419,6 +437,7 @@ class ResNet2D101(ResNet2D):
                  numerical_names=None,
                  output_activation='sigmoid',
 				 dropout_fc=None,
+                 parameters=None,
                  *args,
                  **kwargs
                 ):
@@ -440,6 +459,7 @@ class ResNet2D101(ResNet2D):
             numerical_names,
             output_activation,
             dropout_fc,
+            parameters,
             *args,
             **kwargs
         )
@@ -467,6 +487,8 @@ class ResNet2D152(ResNet2D):
     :param output_activation: int, activation of the output Dense layer of the classifer
 
     :param dropout_fc : float, (optional), dropout rate of dense layer, defaults to None
+
+    :param parameters: parameters for conv layers in blocks
 
     :return model: ResNet model with encoding output (if `include_top=False`) or classification
         output (if `include_top=True`)
@@ -496,6 +518,7 @@ class ResNet2D152(ResNet2D):
                  numerical_names=None,
                  output_activation='sigmoid',
 				 dropout_fc=None,
+                 parameters=None,
                  *args,
                  **kwargs
                 ):
@@ -517,6 +540,7 @@ class ResNet2D152(ResNet2D):
             numerical_names,
             output_activation,
             dropout_fc,
+            parameters,
             *args,
             **kwargs
         )
@@ -544,6 +568,8 @@ class ResNet2D200(ResNet2D):
     :param output_activation: int, activation of the output Dense layer of the classifer
 
     :param dropout_fc : float, (optional), dropout rate of dense layer, defaults to None
+
+    :param parameters: parameters for conv layers in blocks
 
     :return model: ResNet model with encoding output (if `include_top=False`) or classification
         output (if `include_top=True`)
@@ -573,6 +599,7 @@ class ResNet2D200(ResNet2D):
                  numerical_names=None,
                  output_activation='sigmoid',
             	 dropout_fc=None,
+                 parameters=None,
                  *args,
                  **kwargs):
 
@@ -593,6 +620,7 @@ class ResNet2D200(ResNet2D):
             numerical_names,
             output_activation,
             dropout_fc,
+            parameters,
             *args,
             **kwargs
         )

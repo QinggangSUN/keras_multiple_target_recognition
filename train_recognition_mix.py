@@ -963,9 +963,6 @@ if __name__ == '__main__':
                                             **{'win_length':win_i, 'hop_length':hop_i, 'n_mels':n_mels_i, 'n_mfcc':n_mfcc_i})
                 x_list, y_list = standar_data(x_list, y_list, 2, 2, test_few=False)
 
-                test_all_check_models(path_save, x_list=x_list, y_list=y_list, num_models=[11, 14], model_load=0,
-                                    dict_model_load=DICT_MODEL_CONFIG, **{'subset_acc_name':subset_acc_name})
-
                 for i in range(1, 2):
                     for j in range(-3, -4, -1):
                         search_models(x_list, y_list, [11, 14], path_save, **{'i':i, 'j':j, 'subset_acc_name':subset_acc_name})

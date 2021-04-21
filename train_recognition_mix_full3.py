@@ -67,6 +67,16 @@ if __name__ == '__main__':
                                                 'kernel_regularizer':keras.regularizers.l2(1e-4)}
                                  }
 
+    MODEL_STRUCT_CONFIG_CVRESNET = {'output_activation':'linear',
+                                    'dropout_fc':None,
+                                    'parameters':{'kernel_initializer':'he_normal'}
+                                    }
+    MODEL_STRUCT_CONFIG_CVRESNET = {'output_activation':'linear',
+                                    'dropout_fc':None,
+                                    'parameters':{'kernel_initializer':'he_normal',
+                                                  'kernel_regularizer':keras.regularizers.l2(1e-4)}
+                                    }
+
     N_GPU = 1
 
     def create_model(x_list, y_list, num_model, n_gpu=1):
@@ -617,7 +627,7 @@ if __name__ == '__main__':
             gc.collect()
 
         if 6 in model_list:
-            model6 = build_model6(d1, d2, od, **MODEL_STRUCT_CONFIG)  # ResNet 1D 34
+            model6 = build_model6(d1, d2, od, **MODEL_STRUCT_CONFIG_RESNET)  # ResNet 1D 34
             path_result = os.path.join(path_save, 'model_6_1_1')
             paras = {'i':i, 'j':j, 'epochs':100, 'batch_size':64, 'n_gpu':N_GPU}
             train_model(model=model6, paras=paras, x_list=x_list, y_list=y_list, path_save=path_result)
@@ -874,9 +884,9 @@ if __name__ == '__main__':
     y_list = [np.squeeze(y_i) for y_i in y_list]  # (n_samples, od)
     for i in range(1, 2):
         for j in range(-3, -4, -1):
-            search_models(x_list, y_list, [9, 6, 5], path_save, **{'i':i, 'j':j})
+            search_models(x_list, y_list, [90, 9, 6, 5], path_save, **{'i':i, 'j':j})
 
-    test_all_check_models(path_save, x_list=x_list, y_list=y_list, num_models=[9, 6, 5], model_load=3,
+    test_all_check_models(path_save, x_list=x_list, y_list=y_list, num_models=[90, 9, 6, 5], model_load=3,
                           dict_model_load={**DICT_MODEL_CONFIG, **DICT_MODEL_STRUCT},
                           kw_model='.hdf5',
                           **DICT_MODEL_COMPILE)
@@ -903,9 +913,9 @@ if __name__ == '__main__':
 
         for i in range(1, 2):
             for j in range(-3, -4, -1):
-                search_models(x_list, y_list, [12, 13, 10], path_save, **{'i':i, 'j':j})
+                search_models(x_list, y_list, [120, 12, 13, 10], path_save, **{'i':i, 'j':j})
 
-        test_all_check_models(path_save, x_list=x_list, y_list=y_list, num_models=[12, 13, 10], model_load=3,
+        test_all_check_models(path_save, x_list=x_list, y_list=y_list, num_models=[120, 12, 13, 10], model_load=3,
                               dict_model_load={**DICT_MODEL_CONFIG, **DICT_MODEL_STRUCT},
                               kw_model='.hdf5',
                               **DICT_MODEL_COMPILE)
@@ -1026,11 +1036,11 @@ if __name__ == '__main__':
             for j in range(-3, -4, -1):
                 search_models(x_list, y_list, [150, 15, 16, 17, 18, 19], path_save, **{'i':i, 'j':j})  # 15, 16, 17, 18, 19
 
-                test_all_check_models(path_save, x_list=x_list, y_list=y_list,
-                                      num_models=[150, 15, 16, 17, 18, 19], model_load=3,
-                                      dict_model_load={**DICT_MODEL_CONFIG, **DICT_MODEL_STRUCT},
-                                      kw_model='.hdf5',
-                                      **DICT_MODEL_COMPILE)
+        test_all_check_models(path_save, x_list=x_list, y_list=y_list,
+                              num_models=[150, 15, 16, 17, 18, 19], model_load=3,
+                              dict_model_load={**DICT_MODEL_CONFIG, **DICT_MODEL_STRUCT},
+                              kw_model='.hdf5',
+                              **DICT_MODEL_COMPILE)
     # --------------------------------------------------------------------------
     # for 1D realspectrum and imgspectrum
     WIN_LIST = [10547]
@@ -1057,10 +1067,10 @@ if __name__ == '__main__':
             for j in range(-3, -4, -1):
                 search_models(x_list, y_list, [200, 20, 21, 22, 23, 24], path_save, **{'i':i, 'j':j})
 
-                test_all_check_models(path_save, x_list=x_list, y_list=y_list,
-                                      num_models=[200, 20, 21, 22, 23, 24], model_load=3,
-                                      dict_model_load={**DICT_MODEL_CONFIG, **DICT_MODEL_STRUCT},
-                                      kw_model='.hdf5',
-                                      **DICT_MODEL_COMPILE)
+        test_all_check_models(path_save, x_list=x_list, y_list=y_list,
+                              num_models=[200, 20, 21, 22, 23, 24], model_load=3,
+                              dict_model_load={**DICT_MODEL_CONFIG, **DICT_MODEL_STRUCT},
+                              kw_model='.hdf5',
+                              **DICT_MODEL_COMPILE)
 
     logging.info('finished')
