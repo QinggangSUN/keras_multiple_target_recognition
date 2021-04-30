@@ -5,7 +5,6 @@ Created on Wed Jan  6 20:56:26 2021
 @author: SUN Qinggang
 
 E-mail: sun10qinggang@163.com
-
     First adjust numbers, split to train val test sets,
     secondly mix data s_1_1_2, s_1_1_3, s_2_2_1, s_2_2_3, s_3_3_1, s_3_3_2, s_1_1_1, s_2_2_2, s_3_3_3,
     then compute featues.
@@ -174,7 +173,7 @@ def list_transpose(lst):
     """
     d_1 = len(lst[0])
     lst_t = [[] for _ in range(d_1)]
-    for i, lst_i in enumerate(lst):
+    for lst_i in lst:
         for j, lst_ij in enumerate(lst_i):
             lst_t[j].append(lst_ij)
     return lst_t

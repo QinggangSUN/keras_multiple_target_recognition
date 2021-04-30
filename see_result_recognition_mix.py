@@ -124,7 +124,10 @@ class ConfusionMatrix(object):
         y_pred_standard = []
         for y_true_i, y_pred_i in zip(self.y_true, self.y_pred):
             y_true_standard.append(dict_labels[tuple(y_true_i.reshape(-1,).tolist())])
-            y_pred_standard.append(dict_labels[tuple(round_y_pred_int_np(y_pred_i.reshape(-1,)).tolist())])
+            y_pred_i_standard = round_y_pred_int_np(y_pred_i.reshape(-1,))
+            y_pred_i_standard = np.maximum(y_pred_i_standard, 0)
+            y_pred_i_standard = np.minimum(y_pred_i_standard, max_src)            
+            y_pred_standard.append(dict_labels[tuple(y_pred_i_standard.tolist())])
         self.y_true_standard = y_true_standard
         self.y_pred_standard = y_pred_standard
         logging.debug(y_true_standard)

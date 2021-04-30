@@ -26,7 +26,7 @@ if __name__ == '__main__':
     import tensorflow as tf
 
     from error import Error, ParameterError
-    from file_operation import list_dirs, list_files_end_str, mkdir, walk_dirs_start_str
+    from file_operation import list_dirs, list_files_end_str, mkdir, mycopyfile, walk_dirs_start_str
     from loss_acc import subset_acc_int, subset_acc_int_np, macro_averaged_acc_int, macro_averaged_acc_int_np
     from prepare_data_shipsear_recognition_mix_s0tos3full3 import PathSourceRootFull
     from prepare_data_shipsear_recognition_mix_s0tos3 import read_datas, save_datas
@@ -82,8 +82,8 @@ if __name__ == '__main__':
     def create_model(x_list, y_list, num_model, n_gpu=1):
         """Create model for test model.
         Args:
-            x_list (list[np.array]): input datasets.
-            y_list (list[np.array]): output datasets.
+            x_list (list[np.ndarray]): input datasets.
+            y_list (list[np.ndarray]): output datasets.
             num_model (int): the number of model.
             n_gpu (int): number of gpu to train model.
         Returns:
@@ -148,8 +148,8 @@ if __name__ == '__main__':
         """Test predict and evaluate model.
         Args:
             model (keras.Model): keras model
-            x_list (list[np.array]): input data sets
-            y_list (list[np.array]): labels data sets
+            x_list (list[np.ndarray]): input data sets
+            y_list (list[np.ndarray]): labels data sets
             pbs (int): predict bach size
             modelname (str): name of the model
             path_save (str): where to save predict results
@@ -241,8 +241,8 @@ if __name__ == '__main__':
         """Predict check models with models under path_save_model.
         Args:
             path_save_model (str): path where model saved.
-            x_list (list[np.array]): input data sets.
-            y_list (list[np.array]): labels data sets.
+            x_list (list[np.ndarray]): input data sets.
+            y_list (list[np.ndarray]): labels data sets.
             num_model (int): number of the model.
             pbs (int, optional): predict bach size. Defaults to 256.
             kw_model (str, optional): file type of the saved models. Defaults to '.hdf5'.
@@ -296,8 +296,8 @@ if __name__ == '__main__':
         """Predict all check models in dirs under path_save_root.
         Args:
             path_save_root (str): path root of the saved models.
-            x_list (list[np.array]): input data sets.
-            y_list (list[np.array]): labels data sets.
+            x_list (list[np.ndarray]): input data sets.
+            y_list (list[np.ndarray]): labels data sets.
             pbs (int, optional): predict bach size. Defaults to 256.
             kw_model (str, optional): file type of the saved models. Defaults to '.hdf5'.
             num_models (list[int], optional): numbers of models. Defaults to None.
@@ -319,8 +319,8 @@ if __name__ == '__main__':
         """Train model.
         Args:
             model (keras.Model): model to train.
-            x_list (list[np.array]): input data sets.
-            y_list (list[np.array]): labels data sets.
+            x_list (list[np.ndarray]): input data sets.
+            y_list (list[np.ndarray]): labels data sets.
             paras (dict): dictionary of the parameters.
             path_save (str): path to save modles.
         """
@@ -414,8 +414,8 @@ if __name__ == '__main__':
             scaler_data (str) ['or', 'mm']: way of scaler original data
             sub_set_way (str) ['rand', 'order']: way of split data sets
         Return:
-            x_list (list[np.array]): list of feature data sets.
-            y_list (list[np.array]): list of label data sets.
+            x_list (list[np.ndarray]): list of feature data sets.
+            y_list (list[np.ndarray]): list of label data sets.
         """
 
         if path_data is None:
@@ -518,13 +518,66 @@ if __name__ == '__main__':
 
         return x_list, y_list
 
+    def standar_x(x, dim_input, min_input=32):
+        """Standardize data shape for network input and output.
+        Args:
+            x (np.ndarray): input dataset.
+            dim_input (int): dimension of the input data.
+            min_input (int, optional): minimum dimension of the input. Defaults to 32.
+        Returns:
+            x (np.ndarray): standardized input dataset.
+        """
+        if dim_input == 1:  # only for 1D network input
+            x = np.asarray(x).transpose(0, 2, 1)  # (n_samples, fl, 1)
+        elif dim_input == 2:  # only for 2D network input
+            x = np.expand_dims(x, -1)  # (n_samples, t, fl, 1)
 
-    def standar_data(x_list, y_list, dim_input, dim_output, min_input=32, test_few=False,
+        if min_input > 0:
+            if dim_input == 2:  # only for 2D input padding, input size must >= (32, 32, 1)
+                d1 = x.shape[1]  # (n_samples, t, fl, 1)
+                d2 = x.shape[2]
+                if d1 < min_input:
+                    x = np.pad(x,
+                              ((0,0), (0,min_input-d1), (0,0), (0,0)),
+                              'constant', constant_values=(0,0))
+                if d2 < min_input:
+                    x = np.pad(x,
+                               ((0,0), (0,0), (0,min_input-d2), (0,0)),
+                               'constant', constant_values=(0,0))
+        return x
+
+    def standar_y(y, dim_output=None, one_out=False, n_one_out=0):
+        """Standardize data shape for network input and output.
+        Args:
+            y (np.ndarray): output dataset.
+            dim_output (int): dimension of the output data.
+            one_out (bool, optional): for one output s1~3. Defaults to False.
+            n_one_out (int, optional): number of the output s1~3. Defaults to 0.
+        Returns:
+            y (np.ndarray): standardized output dataset.
+        """
+        y = np.asarray(y)  # (n_samples, 1, od)
+
+        if dim_output == 1:  # only for 1D network output
+            y = np.squeeze(y)  # (n_samples, od)
+
+        if one_out:
+            # only for one output s1~3
+            if np.rank(y) == 3:
+                y = y[:, :, n_one_out]
+            elif np.rank(y) == 2:
+                y = y[:, n_one_out]
+        logging.debug('Y shape')
+        logging.debug(y.shape)
+
+        return y
+
+    def standar_datas(x_list, y_list, dim_input=None, dim_output=None, min_input=32, test_few=False,
         one_out=False, n_one_out=0):
         """Standardize data shape for network input and output.
         Args:
-            x_list (list[np.array]): input datasets.
-            y_list (list[np.array]): output datasets.
+            x_list (list[np.ndarray]): input datasets.
+            y_list (list[np.ndarray]): output datasets.
             dim_input (int): dimension of the input data.
             dim_output (int): dimension of the output data.
             min_input (int, optional): minimum dimension of the input. Defaults to 32.
@@ -532,44 +585,17 @@ if __name__ == '__main__':
             one_out (bool, optional): for one output s1~3. Defaults to False.
             n_one_out (int, optional): number of the output s1~3. Defaults to 0.
         Returns:
-            x_list (list[np.array]): standardized input datasets.
-            y_list (list[np.array]): standardized output datasets.
+            x_list (list[np.ndarray]): standardized input datasets.
+            y_list (list[np.ndarray]): standardized output datasets.
         """
         if test_few:  # only for test few samples
             x_list[0], y_list[0] = x_list[0][:6, :, :], y_list[0][:6, :, :]
             x_list[1], y_list[1] = x_list[1][:2, :, :], y_list[1][:2, :, :]
             x_list[2], y_list[2] = x_list[2][:2, :, :], y_list[2][:2, :, :]
-        else:  # only for full data
-            y_list = [np.asarray(y_i) for y_i in y_list]  # (n_samples, 1, od)
 
-        if dim_input == 1:  # only for 1D network input
-            x_list = [np.asarray(x_i).transpose(0, 2, 1) for x_i in x_list]  # (n_samples, fl, 1)
-        elif dim_input == 2:  # only for 2D network input
-            x_list = [np.expand_dims(x_i, -1) for x_i in x_list]  # (n_samples, t, fl, 1)
-
-        if dim_output == 1:  # only for 1D network output
-            y_list = [np.squeeze(y_i) for y_i in y_list]  # (n_samples, od)
-
-        if one_out:
-            # only for one output s1~3
-            for i, y_i in enumerate(y_list):
-                if np.rank(y_i) == 3:
-                    y_list[i] = y_i[:, :, n_one_out]
-                elif np.rank(y_i) == 2:
-                    y_list[i] = y_i[:, n_one_out]
-
-        if min_input > 0:
-            if dim_input == 2:  # only for 2D input padding, input size must >= (32, 32, 1)
-                d1 = x_list[1].shape[1]  # (n_samples, t, fl, 1)
-                d2 = x_list[1].shape[2]
-                if d1 < min_input:
-                    x_list = [np.pad(x_i,
-                                    ((0,0), (0,min_input-d1), (0,0), (0,0)),
-                                    'constant', constant_values=(0,0)) for x_i in x_list]
-                if d2 < min_input:
-                    x_list = [np.pad(x_i,
-                                    ((0,0), (0,0), (0,min_input-d2), (0,0)),
-                                    'constant', constant_values=(0,0)) for x_i in x_list]
+        for i, (x_i, y_i) in enumerate(zip(x_list, y_list)):
+            x_list[i] = standar_x(x_i, dim_input, min_input)
+            y_list[i] = standar_y(y_i, dim_output, one_out, n_one_out)
 
         logging.debug('X shape')
         for x_i in x_list:
@@ -579,6 +605,64 @@ if __name__ == '__main__':
             logging.debug(y_i.shape)
 
         return x_list, y_list
+
+    def real_img_spectrum_concat(path_root, **kwargs):
+        """concate real_spectrum and image_spectrum and saved to files.
+
+        Args:
+            path_root (str): where save datas.
+        """
+
+        win_length = kwargs['win_length']
+        hop_length = kwargs['hop_length']
+        scaler_data = kwargs['scaler_data']
+        sub_set_way = kwargs['sub_set_way']
+
+        path_real_class = PathSourceRootFull(path_root, form_src='realspectrum',
+                                             win_length=win_length, hop_length=hop_length,
+                                             scaler_data=scaler_data, sub_set_way=sub_set_way)
+        path_img_class = PathSourceRootFull(path_root, form_src='imgspectrum',
+                                            win_length=win_length, hop_length=hop_length,
+                                            scaler_data=scaler_data, sub_set_way=sub_set_way)
+
+        path_real_img_root = os.path.join(path_real_class.path_mix_root,
+                                          f'real_img_spectrum_{win_length}_{hop_length}')
+        if scaler_data == 'mm':
+            path_real_img =  os.path.join(path_real_img_root, f'min_max_scaler_{sub_set_way}')
+        elif scaler_data == 'or':
+            path_real_img =  os.path.join(path_real_img_root, f'original_{sub_set_way}')
+        mkdir(path_real_img)
+
+        real_x_list, _ = load_data(path_real_class.path_source)
+        img_x_list, _ = load_data(path_img_class.path_source)
+
+        for name_i, real_i, img_i in zip(['X_train', 'X_val', 'X_test'], real_x_list, img_x_list):
+            file_name_i = os.path.join(path_real_img, f'{name_i}.hdf5')
+            for j in range(real_i.shape[0]):
+                real_ij, img_ij = real_i[j:j+1], img_i[j:j+1]
+                real_ij = standar_x(real_ij, 2)
+                img_ij = standar_x(img_ij, 2)
+                complex_ij = np.concatenate([real_ij, img_ij], axis=-1)
+                if j == 0:
+                    with h5py.File(file_name_i, 'w') as f_w:
+                        f_w.create_dataset(
+                            'data', data=complex_ij, dtype=np.float32,
+                            chunks=(complex_ij.ndim-2)*(1,)+complex_ij.shape[-2:],
+                            maxshape=((None,)+complex_ij.shape[1:]),
+                            compression="gzip", compression_opts=9)
+                else:
+                    with h5py.File(file_name_i, 'a') as f_a:
+                        f_a['data'].resize((f_a['data'].shape[0]+complex_ij.shape[0]), axis=0)
+                        f_a['data'][-complex_ij.shape[0]:] = complex_ij
+
+        y_filenames = ['Y_train', 'Y_val', 'Y_test']
+        y_list = read_datas(path_real_class.path_source, y_filenames)
+        y_standard_list = []
+        for y_i in y_list:
+            y_i_standard = standar_y(y_i, dim_output=1)
+            y_standard_list.append(y_i_standard)
+        save_datas(dict(zip(y_filenames, y_standard_list)), path_real_img)
+
 
     from models.models_recognition import build_model, build_model2, build_model3, build_model4
     from models.models_recognition import build_model90, build_model9, build_model6, build_model5
@@ -593,8 +677,8 @@ if __name__ == '__main__':
     def search_models(x_list, y_list, model_list, path_save, **kwargs):
         """train the models.
         Args:
-            x_list (list[np.array]): input datasets.
-            y_list (list[np.array]): output datasets.
+            x_list (list[np.ndarray]): input datasets.
+            y_list (list[np.ndarray]): output datasets.
             model_list (list[int]): numbers of the models to train.
             path_save (str): path to save models.
         """
@@ -840,7 +924,7 @@ if __name__ == '__main__':
     path_save = os.path.join(PATH_SAVE_ROOT, 'wavmat_or_rand')  # _mm_order
     mkdir(path_save)
     x_list, y_list = load_data(path_root=PATH_ROOT, form_src='wav', scaler_data='or', sub_set_way='rand')
-    x_list, y_list = standar_data(x_list, y_list, 1, 2, test_few=False)
+    x_list, y_list = standar_datas(x_list, y_list, 1, 2, test_few=False)
 
     for i in range(1, 2):
         for j in range(-3, -4, -1):
@@ -871,7 +955,7 @@ if __name__ == '__main__':
     mkdir(path_save)
     x_list, y_list = load_data(path_root=PATH_ROOT, form_src='magspectrum', scaler_data='or', sub_set_way='rand',
                                **{'win_length':WIN_LENGTH, 'hop_length':HOP_LENGTH})
-    x_list, y_list = standar_data(x_list, y_list, 1, 2, test_few=False)
+    x_list, y_list = standar_datas(x_list, y_list, 1, 2, test_few=False)
 
     for i in range(1, 2):
         for j in range(-3, -4, -1):
@@ -900,7 +984,7 @@ if __name__ == '__main__':
         mkdir(path_save)
         x_list, y_list = load_data(path_root=PATH_ROOT, form_src='magspectrum', scaler_data='or', sub_set_way='rand',
                                    **{'win_length':win_i, 'hop_length':hop_i})
-        x_list, y_list = standar_data(x_list, y_list, 2, 2, test_few=False)
+        x_list, y_list = standar_datas(x_list, y_list, 2, 2, test_few=False)
 
         for i in range(1, 2):
             for j in range(-3, -4, -1):
@@ -932,7 +1016,7 @@ if __name__ == '__main__':
             mkdir(path_save)
             x_list, y_list = load_data(path_root=PATH_ROOT, form_src='logmelspectrum', scaler_data='or', sub_set_way='rand',
                                        **{'win_length':win_i, 'hop_length':hop_i, 'n_mels':n_mels_i})
-            x_list, y_list = standar_data(x_list, y_list, 2, 2)
+            x_list, y_list = standar_datas(x_list, y_list, 2, 2)
 
             for i in range(1, 2):
                 for j in range(-3, -4, -1):
@@ -966,7 +1050,7 @@ if __name__ == '__main__':
                 mkdir(path_save)
                 x_list, y_list = load_data(path_root=PATH_ROOT, form_src='mfcc', scaler_data='or', sub_set_way='rand',
                                            **{'win_length':win_i, 'hop_length':hop_i, 'n_mels':n_mels_i, 'n_mfcc':n_mfcc_i})
-                x_list, y_list = standar_data(x_list, y_list, 2, 2, test_few=False)
+                x_list, y_list = standar_datas(x_list, y_list, 2, 2, test_few=False)
 
                 for i in range(1, 2):
                     for j in range(-3, -4, -1):
@@ -996,7 +1080,7 @@ if __name__ == '__main__':
             mkdir(path_save)
             x_list, y_list = load_data(path_root=PATH_ROOT, form_src='demon', scaler_data='or', sub_set_way='rand',
                                         **{'high':high_i, 'low':low_i, 'cutoff':cutoff_i})
-            x_list, y_list = standar_data(x_list, y_list, 1, 2, test_few=False)
+            x_list, y_list = standar_datas(x_list, y_list, 1, 2, test_few=False)
 
             for i in range(1, 2):
                 for j in range(-3, -4, -1):
@@ -1020,21 +1104,20 @@ if __name__ == '__main__':
     HOP_LIST = [ 66, 132,  264,  396,  527,  659,  791]
 
     for win_i, hop_i in zip(WIN_LIST, HOP_LIST):
+        # only for first time creat data.
+        real_img_spectrum_concat(PATH_ROOT, **{'win_length':win_i, 'hop_length':hop_i,
+                                               'scaler_data':'or', 'sub_set_way':'rand'})
+
+        path_real_img = os.path.join(PathSourceRootFull(PATH_ROOT).path_mix_root,
+                                     f'real_img_spectrum_{win_i}_{hop_i}', 'original_rand')        
+        x_list, y_list = load_data(path_real_img)
+
         path_save = os.path.join(PATH_SAVE_ROOT, f'real_img_spectrum_{win_i}_{hop_i}_or_rand')
         mkdir(path_save)
-        real_x_list, y_list = load_data(path_root=PATH_ROOT, form_src='realspectrum', scaler_data='or', sub_set_way='rand',
-                                        **{'win_length':win_i, 'hop_length':hop_i})
-        real_x_list, y_list = standar_data(real_x_list, y_list, 2, 1, test_few=False)
-
-        img_x_list, y_list = load_data(path_root=PATH_ROOT, form_src='imgspectrum', scaler_data='or', sub_set_way='rand',
-                                        **{'win_length':win_i, 'hop_length':hop_i})
-        img_x_list, y_list = standar_data(img_x_list, y_list, 2, 1, test_few=False)
-
-        x_list = [np.concatenate([real_i, img_i], axis=-1) for real_i, img_i in zip(real_x_list, img_x_list)]
 
         for i in range(1, 2):
             for j in range(-3, -4, -1):
-                search_models(x_list, y_list, [150, 15, 16, 17, 18, 19], path_save, **{'i':i, 'j':j})  # 15, 16, 17, 18, 19
+                search_models(x_list, y_list, [150, 15, 16, 17, 18, 19], path_save, **{'i':i, 'j':j})
 
         test_all_check_models(path_save, x_list=x_list, y_list=y_list,
                               num_models=[150, 15, 16, 17, 18, 19], model_load=3,
@@ -1051,11 +1134,11 @@ if __name__ == '__main__':
         mkdir(path_save)
         real_x_list, y_list = load_data(path_root=PATH_ROOT, form_src='realspectrum', scaler_data='or', sub_set_way='rand',
                                     **{'win_length':win_i, 'hop_length':hop_i})
-        real_x_list, y_list = standar_data(real_x_list, y_list, 1, 1, test_few=False)
+        real_x_list, y_list = standar_datas(real_x_list, y_list, 1, 1, test_few=False)
 
         img_x_list, y_list = load_data(path_root=PATH_ROOT, form_src='imgspectrum', scaler_data='or', sub_set_way='rand',
                                     **{'win_length':win_i, 'hop_length':hop_i})
-        img_x_list, y_list = standar_data(img_x_list, y_list, 1, 1, test_few=False)
+        img_x_list, y_list = standar_datas(img_x_list, y_list, 1, 1, test_few=False)
 
         x_list = [np.concatenate([real_i, img_i], axis=-1) for real_i, img_i in zip(real_x_list, img_x_list)]
 
