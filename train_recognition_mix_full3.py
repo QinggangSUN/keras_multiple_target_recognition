@@ -171,16 +171,16 @@ if __name__ == '__main__':
 
         dict_r = dict()
 
-        y_predict_train = np.array(model.predict(x_train, pbs), dtype=np.float32)
-        y_predict_val = np.array(model.predict(x_val, pbs), dtype=np.float32)
-        y_predict_test = np.array(model.predict(x_test, pbs), dtype=np.float32)
+        y_predict_train = np.asarray(model.predict(x_train, pbs), dtype=np.float32)
+        y_predict_val = np.asarray(model.predict(x_val, pbs), dtype=np.float32)
+        y_predict_test = np.asarray(model.predict(x_test, pbs), dtype=np.float32)
 
         dict_r.update({'p_train':y_predict_train.tolist()})
-        dict_r.update({'l_train':y_train.tolist()})
+        dict_r.update({'l_train':np.asarray(y_train).tolist()})
         dict_r.update({'p_val':y_predict_val.tolist()})
-        dict_r.update({'l_val':y_val.tolist()})
+        dict_r.update({'l_val':np.asarray(y_val).tolist()})
         dict_r.update({'p_test':y_predict_test.tolist()})
-        dict_r.update({'l_test':y_test.tolist()})
+        dict_r.update({'l_test':np.asarray(y_test).tolist()})
 
         if bool_evaluate:
             score_keras_train = model.evaluate(x_train, y_train, verbose=0)  # batch_size=d0_train OOM
@@ -200,11 +200,11 @@ if __name__ == '__main__':
             d0_val = x_val.shape[0]  # d0_val = number of val samples
             d0_test = x_test.shape[0]  # d0_test = number of test samples
 
-            subset_acc_int_train = subset_acc_int_np(y_train.reshape(d0_train, -1),
+            subset_acc_int_train = subset_acc_int_np(np.asarray(y_train).reshape(d0_train, -1),
                                     y_predict_train.reshape(d0_train, -1), 0.5)
-            subset_acc_int_val = subset_acc_int_np(y_val.reshape(d0_val, -1),
+            subset_acc_int_val = subset_acc_int_np(np.asarray(y_val).reshape(d0_val, -1),
                                     y_predict_val.reshape(d0_val, -1), 0.5)
-            subset_acc_int_test = subset_acc_int_np(y_test.reshape(d0_test, -1),
+            subset_acc_int_test = subset_acc_int_np(np.asarray(y_test).reshape(d0_test, -1),
                                     y_predict_test.reshape(d0_test, -1), 0.5)
 
             dict_r.update({'subset_acc_int_train':float(subset_acc_int_train)})
@@ -217,13 +217,13 @@ if __name__ == '__main__':
             d0_test = x_test.shape[0]  # d0_test = number of test samples
 
             macro_averaged_acc_int_train = macro_averaged_acc_int_np(
-                y_train.reshape(d0_train, -1),
+                np.asarray(y_train).reshape(d0_train, -1),
                 y_predict_train.reshape(d0_train, -1), 0.5)
             macro_averaged_acc_int_val = macro_averaged_acc_int_np(
-                y_val.reshape(d0_val, -1),
+                np.asarray(y_val).reshape(d0_val, -1),
                 y_predict_val.reshape(d0_val, -1), 0.5)
             macro_averaged_acc_int_test = macro_averaged_acc_int_np(
-                y_test.reshape(d0_test, -1),
+                np.asarray(y_test).reshape(d0_test, -1),
                 y_predict_test.reshape(d0_test, -1), 0.5)
 
             dict_r.update({'macro_averaged_acc_int_train':macro_averaged_acc_int_train.tolist()})
@@ -332,6 +332,7 @@ if __name__ == '__main__':
         optimizer_type = paras['optimizer'] if 'optimizer' in paras.keys() else 'adam'
         pbs = paras['pbs'] if 'pbs' in paras.keys() else 256
         metrics = paras['metrics'] if 'metrics' in paras.keys() else [subset_acc_int, macro_averaged_acc_int]
+        shuffle = paras['shuffle'] if 'shuffle' in paras.keys() else True
 
         x_train, x_val, _ = x_list
         y_train, y_val, _ = y_list
@@ -371,7 +372,7 @@ if __name__ == '__main__':
             x_train, y_train,
             epochs=epochs,
             batch_size=batch_size,
-            shuffle=True,
+            shuffle=shuffle,
             validation_data=(x_val, y_val),
             callbacks=[TensorBoard(log_dir=path_board), checkpoint])
 
@@ -583,15 +584,15 @@ if __name__ == '__main__':
             min_input (int, optional): minimum dimension of the input. Defaults to 32.
             test_few (bool, optional): return few data for test. Defaults to False.
             one_out (bool, optional): for one output s1~3. Defaults to False.
-            n_one_out (int, optional): number of the output s1~3. Defaults to 0.
+            n_one_out (int, optional): number of the output s1~3. Defaults to 0. 
         Returns:
             x_list (list[np.ndarray]): standardized input datasets.
             y_list (list[np.ndarray]): standardized output datasets.
         """
         if test_few:  # only for test few samples
-            x_list[0], y_list[0] = x_list[0][:6, :, :], y_list[0][:6, :, :]
-            x_list[1], y_list[1] = x_list[1][:2, :, :], y_list[1][:2, :, :]
-            x_list[2], y_list[2] = x_list[2][:2, :, :], y_list[2][:2, :, :]
+            x_list[0], y_list[0] = x_list[0][:6], y_list[0][:6]
+            x_list[1], y_list[1] = x_list[1][:2], y_list[1][:2]
+            x_list[2], y_list[2] = x_list[2][:2], y_list[2][:2]
 
         for i, (x_i, y_i) in enumerate(zip(x_list, y_list)):
             x_list[i] = standar_x(x_i, dim_input, min_input)
@@ -664,7 +665,6 @@ if __name__ == '__main__':
         save_datas(dict(zip(y_filenames, y_standard_list)), path_real_img)
 
 
-    from models.models_recognition import build_model, build_model2, build_model3, build_model4
     from models.models_recognition import build_model90, build_model9, build_model6, build_model5
     from models.models_recognition import build_model7, build_model8
     from models.models_recognition import build_model120, build_model12, build_model13, build_model10
@@ -793,7 +793,7 @@ if __name__ == '__main__':
         if 150 in model_list:
             model150 = build_model150(d1, d2, od, **MODEL_STRUCT_CONFIG)  # Complex ResNet 2D 10
             path_result = os.path.join(path_save, 'model_150_1_1')
-            paras = {'i':i, 'j':j, 'epochs':100, 'batch_size':8, 'n_gpu':N_GPU}
+            paras = {'i':i, 'j':j, 'epochs':100, 'batch_size':8, 'n_gpu':N_GPU, 'shuffle':'batch'}
             train_model(model=model150, x_list=x_list, y_list=y_list, paras=paras, path_save=path_result)
             del model150
             gc.collect()
@@ -801,7 +801,7 @@ if __name__ == '__main__':
         if 15 in model_list:
             model15 = build_model15(d1, d2, od, **MODEL_STRUCT_CONFIG)  # Complex ResNet 2D 18
             path_result = os.path.join(path_save, 'model_15_1_1')
-            paras = {'i':i, 'j':j, 'epochs':100, 'batch_size':8, 'n_gpu':N_GPU}
+            paras = {'i':i, 'j':j, 'epochs':100, 'batch_size':8, 'n_gpu':N_GPU, 'shuffle':'batch'}
             train_model(model=model15, x_list=x_list, y_list=y_list, paras=paras, path_save=path_result)
             del model15
             gc.collect()
@@ -809,7 +809,7 @@ if __name__ == '__main__':
         if 16 in model_list:
             model16 = build_model16(d1, d2, od, **MODEL_STRUCT_CONFIG)  # Complex ResNet 2D 34
             path_result = os.path.join(path_save, 'model_16_1_1')
-            paras = {'i':i, 'j':j, 'epochs':100, 'batch_size':8, 'n_gpu':N_GPU}
+            paras = {'i':i, 'j':j, 'epochs':100, 'batch_size':8, 'n_gpu':N_GPU, 'shuffle':'batch'}
             train_model(model=model16, x_list=x_list, y_list=y_list, paras=paras, path_save=path_result)
             del model16
             gc.collect()
@@ -817,7 +817,7 @@ if __name__ == '__main__':
         if 17 in model_list:
             model17 = build_model17(d1, d2, od, **MODEL_STRUCT_CONFIG)  # Complex ResNet 2D 50
             path_result = os.path.join(path_save, 'model_17_1_1')
-            paras = {'i':i, 'j':j, 'epochs':100, 'batch_size':8, 'n_gpu':N_GPU}
+            paras = {'i':i, 'j':j, 'epochs':100, 'batch_size':8, 'n_gpu':N_GPU, 'shuffle':'batch'}
             train_model(model=model17, x_list=x_list, y_list=y_list, paras=paras, path_save=path_result)
             del model17
             gc.collect()
@@ -825,7 +825,7 @@ if __name__ == '__main__':
         if 18 in model_list:
             model18 = build_model18(d1, d2, od, **MODEL_STRUCT_CONFIG)  # Complex DenseNet 2D 121
             path_result = os.path.join(path_save, 'model_18_1_1')
-            paras = {'i':i, 'j':j, 'epochs':100, 'batch_size':8, 'n_gpu':N_GPU}
+            paras = {'i':i, 'j':j, 'epochs':100, 'batch_size':8, 'n_gpu':N_GPU, 'shuffle':'batch'}
             train_model(model=model18, x_list=x_list, y_list=y_list, paras=paras, path_save=path_result)
             del model18
             gc.collect()
@@ -833,7 +833,7 @@ if __name__ == '__main__':
         if 19 in model_list:
             model19 = build_model19(d1, d2, od, **MODEL_STRUCT_CONFIG)  # Complex DenseNet 2D 169
             path_result = os.path.join(path_save, 'model_19_1_1')
-            paras = {'i':i, 'j':j, 'epochs':100, 'batch_size':8, 'n_gpu':N_GPU}
+            paras = {'i':i, 'j':j, 'epochs':100, 'batch_size':8, 'n_gpu':N_GPU, 'shuffle':'batch'}
             train_model(model=model19, x_list=x_list, y_list=y_list, paras=paras, path_save=path_result)
             del model19
             gc.collect()
@@ -931,13 +931,13 @@ if __name__ == '__main__':
             search_models(x_list, y_list, [7, 8], path_save, **{'i':i, 'j':j})
 
     test_all_check_models(path_save, x_list=x_list, y_list=y_list, num_models=[7, 8], model_load=0,
-                          dict_model_load=DICT_MODEL_CONFIG)
+                          dict_model_load=DICT_MODEL_CONFIG, **{'n_gpu':N_GPU})
     # test_all_check_models(path_save, x_list=x_list, y_list=y_list, num_models=[7, 8], model_load=3,
     #                       dict_model_load={**DICT_MODEL_CONFIG, **DICT_MODEL_STRUCT},
     #                       kw_model='.hdf5',
     #                       **DICT_MODEL_COMPILE)
 
-    y_list = [np.squeeze(y_i) for y_i in y_list]  # (n_samples, od)
+    y_list = [standar_y(y_i, dim_output=1) for y_i in y_list]  # (n_samples, od)
 
     for i in range(1, 2):
         for j in range(-3, -4, -1):
@@ -962,10 +962,10 @@ if __name__ == '__main__':
             search_models(x_list, y_list, [7, 8], path_save, **{'i':i, 'j':j})
 
     test_all_check_models(path_save, x_list=x_list, y_list=y_list, num_models=[7, 8], model_load=0,
-                            dict_model_load=DICT_MODEL_CONFIG)
+                          dict_model_load=DICT_MODEL_CONFIG, **{'n_gpu':N_GPU})
 
 
-    y_list = [np.squeeze(y_i) for y_i in y_list]  # (n_samples, od)
+    y_list = [standar_y(y_i, dim_output=1) for y_i in y_list]  # (n_samples, od)
     for i in range(1, 2):
         for j in range(-3, -4, -1):
             search_models(x_list, y_list, [90, 9, 6, 5], path_save, **{'i':i, 'j':j})
@@ -991,9 +991,9 @@ if __name__ == '__main__':
                 search_models(x_list, y_list, [11, 14], path_save, **{'i':i, 'j':j})
 
         test_all_check_models(path_save, x_list=x_list, y_list=y_list, num_models=[11, 14], model_load=0,
-                              dict_model_load=DICT_MODEL_CONFIG)
+                              dict_model_load=DICT_MODEL_CONFIG, **{'n_gpu':N_GPU})
 
-        y_list = [np.squeeze(y_i) for y_i in y_list]  # (n_samples, od)
+    	y_list = [standar_y(y_i, dim_output=1) for y_i in y_list]  # (n_samples, od)
 
         for i in range(1, 2):
             for j in range(-3, -4, -1):
@@ -1023,9 +1023,9 @@ if __name__ == '__main__':
                     search_models(x_list, y_list, [11, 14], path_save, **{'i':i, 'j':j})
 
             test_all_check_models(path_save, x_list=x_list, y_list=y_list, num_models=[11, 14], model_load=0,
-                                  dict_model_load=DICT_MODEL_CONFIG)
+                                  dict_model_load=DICT_MODEL_CONFIG, **{'n_gpu':N_GPU})
 
-            y_list = [np.squeeze(y_i) for y_i in y_list]  # (n_samples, od)
+            y_list = [standar_y(y_i, dim_output=1) for y_i in y_list]  # (n_samples, od)
             for i in range(1, 2):
                 for j in range(-3, -4, -1):
                     search_models(x_list, y_list, [12, 13, 10], path_save, **{'i':i, 'j':j})
@@ -1057,9 +1057,9 @@ if __name__ == '__main__':
                         search_models(x_list, y_list, [11, 14], path_save, **{'i':i, 'j':j})
 
                 test_all_check_models(path_save, x_list=x_list, y_list=y_list, num_models=[11, 14], model_load=0,
-                                      dict_model_load=DICT_MODEL_CONFIG)
+                                      dict_model_load=DICT_MODEL_CONFIG, **{'n_gpu':N_GPU})
 
-                y_list = [np.squeeze(y_i) for y_i in y_list]  # (n_samples, od)
+                y_list = [standar_y(y_i, dim_output=1) for y_i in y_list]  # (n_samples, od)
                 for i in range(1, 2):
                     for j in range(-3, -4, -1):
                         search_models(x_list, y_list, [120, 12, 13, 10], path_save, **{'i':i, 'j':j})
@@ -1087,9 +1087,9 @@ if __name__ == '__main__':
                     search_models(x_list, y_list, [7, 8], path_save, **{'i':i, 'j':j})
 
             test_all_check_models(path_save, x_list=x_list, y_list=y_list, num_models=[7, 8], model_load=0,
-                                    dict_model_load=DICT_MODEL_CONFIG)
+                                  dict_model_load=DICT_MODEL_CONFIG, **{'n_gpu':N_GPU})
 
-            y_list = [np.squeeze(y_i) for y_i in y_list]  # (n_samples, od)
+            y_list = [standar_y(y_i, dim_output=1) for y_i in y_list]  # (n_samples, od)
             for i in range(1, 2):
                 for j in range(-3, -4, -1):
                     search_models(x_list, y_list, [90, 9, 6, 5], path_save, **{'i':i, 'j':j})
@@ -1102,18 +1102,55 @@ if __name__ == '__main__':
     # for 2D realspectrum and imgspectrum
     WIN_LIST = [264, 528, 1056, 1582, 2110, 2638, 3164]
     HOP_LIST = [ 66, 132,  264,  396,  527,  659,  791]
+    import h5py
 
     for win_i, hop_i in zip(WIN_LIST, HOP_LIST):
-        # only for first time creat data.
-        real_img_spectrum_concat(PATH_ROOT, **{'win_length':win_i, 'hop_length':hop_i,
-                                               'scaler_data':'or', 'sub_set_way':'rand'})
-
-        path_real_img = os.path.join(PathSourceRootFull(PATH_ROOT).path_mix_root,
-                                     f'real_img_spectrum_{win_i}_{hop_i}', 'original_rand')        
-        x_list, y_list = load_data(path_real_img)
-
         path_save = os.path.join(PATH_SAVE_ROOT, f'real_img_spectrum_{win_i}_{hop_i}_or_rand')
         mkdir(path_save)
+
+        path_real_img = os.path.join(PathSourceRootFull(PATH_ROOT).path_mix_root,
+                                     f'real_img_spectrum_{win_i}_{hop_i}', 'original_rand')
+        mkdir(path_real_img)
+    # --------------------------------------------------------------------------
+        # only for first time creat data.
+        real_x_list, _ = load_data(path_root=PATH_ROOT, form_src='realspectrum', scaler_data='or', sub_set_way='rand',
+                                   **{'win_length':win_i, 'hop_length':hop_i})
+        img_x_list, _ = load_data(path_root=PATH_ROOT, form_src='imgspectrum', scaler_data='or', sub_set_way='rand',
+                                  **{'win_length':win_i, 'hop_length':hop_i})
+        for name_i, real_i, img_i in zip(['X_train', 'X_val', 'X_test'], real_x_list, img_x_list):
+            file_name_i = os.path.join(path_real_img, f'{name_i}.hdf5')
+            for j in range(real_i.shape[0]):
+                real_ij, img_ij = real_i[j:j+1], img_i[j:j+1]
+                real_ij_standard = standar_x(real_ij, 2)
+                img_ij_standard = standar_x(img_ij, 2)
+                complex_ij = np.concatenate([real_ij_standard, img_ij_standard], axis=-1)
+                if j == 0:
+                    with h5py.File(file_name_i, 'w') as f_w:
+                        f_w.create_dataset(
+                            'data', data=complex_ij, dtype=np.float32,
+                            chunks=(complex_ij.ndim-2)*(1,)+complex_ij.shape[-2:],
+                            maxshape=((None,)+complex_ij.shape[1:]),
+                            compression="gzip", compression_opts=9)
+                else:
+                    with h5py.File(file_name_i, 'a') as f_a:
+                        f_a['data'].resize((f_a['data'].shape[0]+complex_ij.shape[0]), axis=0)
+                        f_a['data'][-complex_ij.shape[0]:] = complex_ij
+
+        y_filenames = ['Y_train', 'Y_val', 'Y_test']
+        y_filetype = '.hdf5'
+        path_source_in = PathSourceRootFull(
+            PATH_ROOT, form_src='realspectrum', win_length=win_i, hop_length=hop_i,
+            scaler_data='or', sub_set_way='rand').path_source
+        y_list = read_datas(path_source_in, y_filenames)
+        y_standard_list = []
+        for y_i in y_list:
+            y_i_standard = standar_y(y_i, dim_output=1)
+            y_standard_list.append(y_i_standard)
+        save_datas(dict(zip(y_filenames, y_standard_list)), path_real_img)
+    # --------------------------------------------------------------------------
+        x_list, y_list = load_data(path_real_img)
+
+        y_list = [standar_y(y_i, dim_output=1) for y_i in y_list]  # (n_samples, od)
 
         for i in range(1, 2):
             for j in range(-3, -4, -1):

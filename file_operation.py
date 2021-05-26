@@ -201,7 +201,7 @@ def mkdir(path):
 def mycopyfile(srcfile, dstfile):
     """Copy file from srcfile to dstfile."""
     if not os.path.isfile(srcfile):
-        raise Exception('Source file '+srcfile+' not exist.')
+        raise Exception(f'Source file {srcfile} not exist.')
     else:
         fpath, fname = os.path.split(dstfile)  # split path and filename
         if not os.path.exists(fpath):
@@ -214,7 +214,7 @@ def copy_files(srcpath, dstpath, srcnames, dstnames):
     """Copy srcnames from srcpath to dstpath and rename to dstnames."""
     for srcname, dstname in zip(srcnames, dstnames):
         if not os.path.isfile(os.path.join(srcpath, srcname)):
-            raise ParameterError('Source file '+srcname+' not exist.')
+            raise ParameterError(f'Source file {srcname} not exist.')
         else:
             if not os.path.exists(dstpath):
                 os.makedirs(dstpath)

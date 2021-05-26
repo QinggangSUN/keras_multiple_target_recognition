@@ -159,7 +159,7 @@ class ResNet1D18(ResNet1D):
 
     :param conv_activation: str, the activation of convolution layer in residual blocks
 
-    :param n_filters: int, the number of filters of the first convolution layer in  residual blocks
+    :param n_filters: int, the number of filters of the first convolution layer in residual blocks
 
     :param pooling_func: list, the type of pooling layers in network
 

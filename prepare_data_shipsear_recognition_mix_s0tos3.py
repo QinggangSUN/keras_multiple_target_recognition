@@ -449,24 +449,24 @@ def read_source(path, file_names, form_src='hdf5', data_type=None):
             logging.warning('ignore data_type')
         file_names = str_remove_end(file_names, form_src)
         source_frames = [
-            h5py.File(os.path.join(path, name_i.rstrip()+'.'+form_src), 'r')['data'] for name_i in file_names]
+            h5py.File(os.path.join(path, f'{name_i.rstrip()}.{form_src}'), 'r')['data'] for name_i in file_names]
     elif form_src == 'bin':
         if data_type is None:
             data_type = np.float32
         source_frames = [np.fromfile(
-            os.path.join(path, name_i.rstrip()+'.'+form_src), dtype=data_type).reshape(
+            os.path.join(path, f'{name_i.rstrip()}.{form_src}'), dtype=data_type).reshape(
                 np.load(os.path.join(path, name_i.rstrip()+'_shape.npy'))) for name_i in file_names]
     elif form_src == 'mat':
         if data_type:
             logging.warning('ignore data_type')
         file_names = str_remove_end(file_names, form_src)
         source_frames = [sio.loadmat(
-            os.path.join(path, name_i.rstrip()+'.'+form_src))['data'] for name_i in file_names]
+            os.path.join(path, f'{name_i.rstrip()}.{form_src}'))['data'] for name_i in file_names]
     elif form_src == 'json':
         if data_type:
             logging.warning('ignore data_type')
         source_frames = [json.load(
-            open(os.path.join(path, name_i.rstrip()+'.'+form_src), 'r')) for name_i in file_names]
+            open(os.path.join(path, f'{name_i.rstrip()}.{form_src}'), 'r')) for name_i in file_names]
     else:
         raise ParameterError('Invalid form_src keyword.')
 
@@ -513,18 +513,22 @@ def read_data(path, file_name, form_src='hdf5', dict_key='data', data_type=None,
             logging.warning('ignore data_type')
         file_name = str_remove_end(file_name, form_src)
         if 'mode' not in kwargs.keys():
-            data = h5py.File(os.path.join(path, file_name.rstrip()+'.'+form_src), 'r')[dict_key]
+            data = h5py.File(os.path.join(path, f'{file_name.rstrip()}.{form_src}'), 'r')[dict_key]
         else:
             if kwargs['mode'] == 'pytables':
-                data = tables.open_file(os.path.join(path, file_name.rstrip()+'.'+form_src))[dict_key]
+                with tables.open_file(os.path.join(path, f'{file_name.rstrip()}.{form_src}')) as f_r:
+                    data = f_r[dict_key]
+            elif kwargs['mode'] == 'np':
+                with h5py.File(os.path.join(path, f'{file_name.rstrip()}.{form_src}'), 'r') as f_r:
+                    data = np.asarray(f_r[dict_key])
             else:
                 raise ParameterError('Invalid read_data mode.')
     elif form_src == 'bin':
         if data_type is None:
             data_type = np.float32
         data = np.fromfile(
-            os.path.join(path, file_name.rstrip()+'.'+form_src), dtype=data_type).reshape(
-                np.load(os.path.join(path, file_name.rstrip()+'_shape.npy')))
+            os.path.join(path, f'{file_name.rstrip()}.{form_src}'), dtype=data_type).reshape(
+                np.load(os.path.join(path, f'{file_name.rstrip()}_shape.npy')))
     elif form_src == 'mat':
         if data_type:
             logging.warning('ignore data_type')

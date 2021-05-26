@@ -111,7 +111,7 @@ def build_model8(id1, id2, od, **kwargs):  # DenseNet 1D 169
 def build_model120(id1, id2, od, **kwargs):  # ResNet 2D 10
     output_activation = kwargs['output_activation'] if 'output_activation' in kwargs.keys() else 'sigmoid'
     dropout_fc = kwargs['dropout_fc'] if 'dropout_fc' in kwargs.keys() else None
-    parameters = kwargs['parameters'] if 'parameters' in kwargs.keys() else {"kernel_initializer": "he_normal"}
+    parameters = kwargs['parameters'] if 'parameters' in kwargs.keys() else {'kernel_initializer': 'he_normal'}
     input_frames = Input(shape=(id1, id2, 1))
     model_resnet = keras_resnet.models.ResNet2D18(input_frames,
                                                   blocks=[2, 2],
@@ -128,7 +128,7 @@ def build_model120(id1, id2, od, **kwargs):  # ResNet 2D 10
 def build_model12(id1, id2, od, **kwargs):  # ResNet 2D 18
     output_activation = kwargs['output_activation'] if 'output_activation' in kwargs.keys() else 'sigmoid'
     dropout_fc = kwargs['dropout_fc'] if 'dropout_fc' in kwargs.keys() else None
-    parameters = kwargs['parameters'] if 'parameters' in kwargs.keys() else {"kernel_initializer": "he_normal"}
+    parameters = kwargs['parameters'] if 'parameters' in kwargs.keys() else {'kernel_initializer': 'he_normal'}
     input_frames = Input(shape=(id1, id2, 1))
     model_resnet = keras_resnet.models.ResNet2D18(
         input_frames, parameters=parameters, include_top=True, classes=od, freeze_bn=False,
@@ -140,7 +140,7 @@ def build_model12(id1, id2, od, **kwargs):  # ResNet 2D 18
 def build_model13(id1, id2, od, **kwargs):  # ResNet 2D 34
     output_activation = kwargs['output_activation'] if 'output_activation' in kwargs.keys() else 'sigmoid'
     dropout_fc = kwargs['dropout_fc'] if 'dropout_fc' in kwargs.keys() else None
-    parameters = kwargs['parameters'] if 'parameters' in kwargs.keys() else {"kernel_initializer": "he_normal"}
+    parameters = kwargs['parameters'] if 'parameters' in kwargs.keys() else {'kernel_initializer': 'he_normal'}
     input_frames = Input(shape=(id1, id2, 1))
     model_resnet = keras_resnet.models.ResNet2D34(
         input_frames, parameters=parameters, include_top=True, classes=od, freeze_bn=False,
@@ -151,7 +151,7 @@ def build_model13(id1, id2, od, **kwargs):  # ResNet 2D 34
 def build_model10(id1, id2, od, **kwargs):  # ResNet 2D 50
     output_activation = kwargs['output_activation'] if 'output_activation' in kwargs.keys() else 'sigmoid'
     dropout_fc = kwargs['dropout_fc'] if 'dropout_fc' in kwargs.keys() else None
-    parameters = kwargs['parameters'] if 'parameters' in kwargs.keys() else {"kernel_initializer": "he_normal"}
+    parameters = kwargs['parameters'] if 'parameters' in kwargs.keys() else {'kernel_initializer': 'he_normal'}
     input_frames = Input(shape=(id1, id2, 1))
     model_resnet = keras_resnet.models.ResNet2D50(
         input_frames, parameters=parameters, include_top=True, classes=od, freeze_bn=False,
@@ -204,7 +204,7 @@ from .complex_networks_keras_tf1.models.resnet_models_2d import ResNet2D18 as Co
 def build_model150(id1, id2, od, **kwargs):  # Complex ResNet 2D 10
     output_activation = kwargs['output_activation'] if 'output_activation' in kwargs.keys() else 'sigmoid'
     dropout_fc = kwargs['dropout_fc'] if 'dropout_fc' in kwargs.keys() else None
-    parameters = kwargs['parameters'] if 'parameters' in kwargs.keys() else None
+    parameters = kwargs['parameters'] if 'parameters' in kwargs.keys() else {'init_criterion':'he'}
     input_frames = Input(shape=(id1, id2, 2))
     model = ComplexResNet2D18(input_frames,
                               num_blocks=[2, 2],
@@ -212,6 +212,7 @@ def build_model150(id1, id2, od, **kwargs):  # Complex ResNet 2D 10
                               parameters=parameters,
                               include_top=True, classes=od,
                               pooling_func=['max', 'global_average'],
+                              conv_activation='crelu',
                               output_activation=output_activation,
                               dropout_fc=dropout_fc)
     logging.info(model.summary())
@@ -220,11 +221,12 @@ def build_model150(id1, id2, od, **kwargs):  # Complex ResNet 2D 10
 def build_model15(id1, id2, od, **kwargs):  # Complex ResNet 2D 18
     output_activation = kwargs['output_activation'] if 'output_activation' in kwargs.keys() else 'sigmoid'
     dropout_fc = kwargs['dropout_fc'] if 'dropout_fc' in kwargs.keys() else None
-    parameters = kwargs['parameters'] if 'parameters' in kwargs.keys() else None
+    parameters = kwargs['parameters'] if 'parameters' in kwargs.keys() else {'init_criterion':'he'}
     input_frames = Input(shape=(id1, id2, 2))
     model = ComplexResNet2D18(input_frames, n_filters=32, include_top=True, classes=od,
                               parameters=parameters,
                               pooling_func=['max', 'global_average'],
+                              conv_activation='crelu',
                               output_activation=output_activation,
                               dropout_fc=dropout_fc)
     logging.info(model.summary())
@@ -234,11 +236,12 @@ from .complex_networks_keras_tf1.models.resnet_models_2d import ResNet2D34 as Co
 def build_model16(id1, id2, od, **kwargs):  # Complex ResNet 2D 34
     output_activation = kwargs['output_activation'] if 'output_activation' in kwargs.keys() else 'sigmoid'
     dropout_fc = kwargs['dropout_fc'] if 'dropout_fc' in kwargs.keys() else None
-    parameters = kwargs['parameters'] if 'parameters' in kwargs.keys() else None
+    parameters = kwargs['parameters'] if 'parameters' in kwargs.keys() else {'init_criterion':'he'}
     input_frames = Input(shape=(id1, id2, 2))
     model = ComplexResNet2D34(input_frames, n_filters=32, include_top=True, classes=od,
                               parameters=parameters,
                               pooling_func=['max', 'global_average'],
+                              conv_activation='crelu',
                               output_activation=output_activation,
                               dropout_fc=dropout_fc)
     logging.info(model.summary())
@@ -248,11 +251,12 @@ from .complex_networks_keras_tf1.models.resnet_models_2d import ResNet2D50 as Co
 def build_model17(id1, id2, od, **kwargs):  # Complex ResNet 2D 50
     output_activation = kwargs['output_activation'] if 'output_activation' in kwargs.keys() else 'sigmoid'
     dropout_fc = kwargs['dropout_fc'] if 'dropout_fc' in kwargs.keys() else None
-    parameters = kwargs['parameters'] if 'parameters' in kwargs.keys() else None
+    parameters = kwargs['parameters'] if 'parameters' in kwargs.keys() else {'init_criterion':'he'}
     input_frames = Input(shape=(id1, id2, 2))
     model = ComplexResNet2D50(input_frames, n_filters=32, include_top=True, classes=od,
                               parameters=parameters,
                               pooling_func=['max', 'global_average'],
+                              conv_activation='crelu',
                               output_activation=output_activation,
                               dropout_fc=dropout_fc)
     logging.info(model.summary())
@@ -269,6 +273,7 @@ def build_model18(id1, id2, od, **kwargs):  # Complex DenseNet 2D 121
                                  dropout_rate=0.0, weight_decay=1e-4,
                                  pooling_func=['max', 'global_average'],
                                  subsample_initial_block=True,
+                                 activation_conv='crelu',
                                  output_activation=output_activation,
                                  dropout_fc=dropout_fc,
                                  include_top=True,
@@ -287,6 +292,7 @@ def build_model19(id1, id2, od, **kwargs):  # Complex DenseNet 2D 169
                                  dropout_rate=0.0, weight_decay=1e-4,
                                  pooling_func=['max', 'global_average'],
                                  subsample_initial_block=True,
+                                 activation_conv='crelu',
                                  output_activation=output_activation,
                                  dropout_fc=dropout_fc,
                                  include_top=True,
@@ -298,7 +304,7 @@ from .complex_networks_keras_tf1.models.resnet_models_1d import ResNet1D18 as Co
 def build_model200(id1, od, **kwargs):  # Complex ResNet 1D 10
     output_activation = kwargs['output_activation'] if 'output_activation' in kwargs.keys() else 'sigmoid'
     dropout_fc = kwargs['dropout_fc'] if 'dropout_fc' in kwargs.keys() else None
-    parameters = kwargs['parameters'] if 'parameters' in kwargs.keys() else None
+    parameters = kwargs['parameters'] if 'parameters' in kwargs.keys() else {'init_criterion':'he'}
     input_frames = Input(shape=(id1, 2))
     model = ComplexResNet1D18(input_frames, num_blocks=[2, 2], include_top=True, classes=od,
                               parameters=parameters,
@@ -311,7 +317,7 @@ def build_model200(id1, od, **kwargs):  # Complex ResNet 1D 10
 def build_model20(id1, od, **kwargs):  # Complex ResNet 1D 18
     output_activation = kwargs['output_activation'] if 'output_activation' in kwargs.keys() else 'sigmoid'
     dropout_fc = kwargs['dropout_fc'] if 'dropout_fc' in kwargs.keys() else None
-    parameters = kwargs['parameters'] if 'parameters' in kwargs.keys() else None
+    parameters = kwargs['parameters'] if 'parameters' in kwargs.keys() else {'init_criterion':'he'}
     input_frames = Input(shape=(id1, 2))
     model = ComplexResNet1D18(input_frames, include_top=True, classes=od,
                               parameters=parameters,
@@ -325,7 +331,7 @@ from .complex_networks_keras_tf1.models.resnet_models_1d import ResNet1D34 as Co
 def build_model21(id1, od, **kwargs):  # Complex ResNet 1D 34
     output_activation = kwargs['output_activation'] if 'output_activation' in kwargs.keys() else 'sigmoid'
     dropout_fc = kwargs['dropout_fc'] if 'dropout_fc' in kwargs.keys() else None
-    parameters = kwargs['parameters'] if 'parameters' in kwargs.keys() else None
+    parameters = kwargs['parameters'] if 'parameters' in kwargs.keys() else {'init_criterion':'he'}
     input_frames = Input(shape=(id1, 2))
     model = ComplexResNet1D34(input_frames, include_top=True, classes=od,
                               parameters=parameters,
@@ -339,7 +345,7 @@ from .complex_networks_keras_tf1.models.resnet_models_1d import ResNet1D50 as Co
 def build_model22(id1, od, **kwargs):  # Complex ResNet 1D 50
     output_activation = kwargs['output_activation'] if 'output_activation' in kwargs.keys() else 'sigmoid'
     dropout_fc = kwargs['dropout_fc'] if 'dropout_fc' in kwargs.keys() else None
-    parameters = kwargs['parameters'] if 'parameters' in kwargs.keys() else None
+    parameters = kwargs['parameters'] if 'parameters' in kwargs.keys() else {'init_criterion':'he'}
     input_frames = Input(shape=(id1, 2))
     model = ComplexResNet1D50(input_frames, include_top=True, classes=od,
                               parameters=parameters,

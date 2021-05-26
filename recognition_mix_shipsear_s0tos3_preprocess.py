@@ -149,7 +149,6 @@ class XsetSourceFrames(object):
             (self.n_sources, self.n_samples)+self.feature_shape)
         return self._sourceframes_mm
 
-
 if __name__ == '__main__':
     import os
     import logging
@@ -230,39 +229,33 @@ if __name__ == '__main__':
         path_class = m_pre_data_shipsear.PathSourceRoot(
             PATH_ROOT, form_src='magspectrum', win_length=win_i, hop_length=hop_i,
             scaler_data='or', sub_set_way='rand')
-            # scaler_data='mm', sub_set_way='order')
         data_create(path_class, RATES_SET)  # , **{'mode_read':'pytables'}
 
         path_class = m_pre_data_shipsear.PathSourceRoot(
             PATH_ROOT, form_src='angspectrum', win_length=win_i, hop_length=hop_i,
             scaler_data='or', sub_set_way='rand')
-            # scaler_data='mm', sub_set_way='order')
         data_create(path_class, RATES_SET)
 
         path_class = m_pre_data_shipsear.PathSourceRoot(
             PATH_ROOT, form_src='realspectrum', win_length=win_i, hop_length=hop_i,
             scaler_data='or', sub_set_way='rand')
-            # scaler_data='mm', sub_set_way='order')
         data_create(path_class, RATES_SET)
 
         path_class = m_pre_data_shipsear.PathSourceRoot(
             PATH_ROOT, form_src='imgspectrum', win_length=win_i, hop_length=hop_i,
             scaler_data='or', sub_set_way='rand')
-            # scaler_data='mm', sub_set_way='order')
         data_create(path_class, RATES_SET)
 
         for n_mels_i in N_MELS:
             path_class = m_pre_data_shipsear.PathSourceRoot(
                 PATH_ROOT, form_src='logmelspectrum', win_length=win_i, hop_length=hop_i, n_mels=n_mels_i,
                 scaler_data='or', sub_set_way='rand')
-                # scaler_data='mm', sub_set_way='order')
             data_create(path_class, RATES_SET)
 
             for n_mfcc_i in N_MFCC:
                 path_class = m_pre_data_shipsear.PathSourceRoot(
                     PATH_ROOT, form_src='mfcc', win_length=win_i, hop_length=hop_i, n_mels=n_mels_i, n_mfcc=n_mfcc_i,
                     scaler_data='or', sub_set_way='rand')
-                    # scaler_data='mm', sub_set_way='order')
                 data_create(path_class, RATES_SET)
 # ---------------------------------------------------------------------------------------------------
     # Create DEMON feature.

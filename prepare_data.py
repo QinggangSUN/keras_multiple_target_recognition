@@ -116,6 +116,18 @@ def mixaddframes_np(frames):
     mix = np.average(frames, axis=0)
     return np.asarray(mix, dtype=np.float32)
 
+def snr_np(x1, x2):
+    """Computing SNR using numpy.
+
+    Args:
+        x1 (np.ndarray, shape==(1,)): signal.
+        x2 (np.ndarray, shape==(1,)): noise.
+
+    Returns:
+        float: SNR in dB.
+    """
+    import numpy as np
+    return 20 * np.log10(np.sum(x1**2) / np.sum(x2**2))
 
 def ld3_to_ld2(ld3):
     """3D list to 2D list.

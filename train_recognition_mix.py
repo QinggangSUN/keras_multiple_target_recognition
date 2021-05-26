@@ -15,6 +15,7 @@ if __name__ == '__main__':
     import json
     from keras import backend as K
     from keras import optimizers
+    import keras.regularizers
     from keras.callbacks import Callback, TensorBoard, ModelCheckpoint
     from keras.layers import Input
     from keras.models import load_model, Model
@@ -26,7 +27,7 @@ if __name__ == '__main__':
     import tensorflow as tf
 
     from error import Error, ParameterError
-    from file_operation import list_dirs, list_files_end_str, mkdir, mycopyfile, walk_dirs_start_str
+    from file_operation import list_dirs, list_files_end_str, mkdir, walk_dirs_start_str
     from loss_acc import binary_acc, subset_acc_nhot, subset_acc_nhot_np
     from prepare_data_shipsear_recognition_mix_s0tos3 import PathSourceRoot, read_datas, save_datas
     from train_functions import output_history, save_model_struct, save_keras_model, load_keras_model
@@ -55,11 +56,27 @@ if __name__ == '__main__':
 
     N_GPU = 2
 
+    MODEL_STRUCT_CONFIG_RESNET = {'parameters':{'kernel_initializer':'he_normal'}
+                                 }
+    # MODEL_STRUCT_CONFIG_RESNET = {'output_activation':'linear',
+    #                               'dropout_fc':None,
+    #                               'parameters':{'kernel_initializer':'he_normal',
+    #                                             'kernel_regularizer':keras.regularizers.l2(1e-4)}
+    #                              }
+
+    MODEL_STRUCT_CONFIG_CVRESNET = {'parameters':{'kernel_initializer':'he_normal'}
+                                    }
+    # MODEL_STRUCT_CONFIG_CVRESNET = {'output_activation':'linear',
+    #                                 'dropout_fc':None,
+    #                                 'parameters':{'kernel_initializer':'he_normal',
+    #                                               'kernel_regularizer':keras.regularizers.l2(1e-4)}
+    #                                 }
+
     def create_model(x_list, y_list, num_model, n_gpu=1):
         """Create model for test model.
         Args:
-            x_list (list[np.array]): input datasets.
-            y_list (list[np.array]): output datasets.
+            x_list (list[np.ndarray]): input datasets.
+            y_list (list[np.ndarray]): output datasets.
             num_model (int): the number of model.
             n_gpu (int): number of gpu to train model.
         Returns:
@@ -70,22 +87,26 @@ if __name__ == '__main__':
         od = y_list[1].shape[-1]
 
         if num_model == 90:
-            model = build_model90(d1, d2, od)  # ResNet 1D 10
+            model = build_model90(d1, d2, od, **MODEL_STRUCT_CONFIG_RESNET)  # ResNet 1D 10
         elif num_model == 9:
-            model = build_model9(d1, d2, od)  # ResNet 1D 18
+            model = build_model9(d1, d2, od, **MODEL_STRUCT_CONFIG_RESNET)  # ResNet 1D 18
         elif num_model == 6:
-            model = build_model6(d1, d2, od)  # ResNet 1D 34
+            model = build_model6(d1, d2, od, **MODEL_STRUCT_CONFIG_RESNET)  # ResNet 1D 34
         elif num_model == 5:
-            model = build_model5(d1, d2, od)  # ResNet 1D 50
+            model = build_model5(d1, d2, od, **MODEL_STRUCT_CONFIG_RESNET)  # ResNet 1D 50
+        elif num_model == 7:
+            model = build_model7(d1, d2, od)  # DenseNet 1D 121
+        elif num_model == 8:
+            model = build_model8(d1, d2, od)  # DenseNet 1D 169
 
         elif num_model == 120:
-            model = build_model120(d1, d2, od)  # ResNet 2D 10
+            model = build_model120(d1, d2, od, **MODEL_STRUCT_CONFIG_RESNET)  # ResNet 2D 10
         elif num_model == 12:
-            model = build_model12(d1, d2, od)  # ResNet 2D 18
+            model = build_model12(d1, d2, od, **MODEL_STRUCT_CONFIG_RESNET)  # ResNet 2D 18
         elif num_model == 13:
-            model = build_model13(d1, d2, od)  # ResNet 2D 34
+            model = build_model13(d1, d2, od, **MODEL_STRUCT_CONFIG_RESNET)  # ResNet 2D 34
         elif num_model == 10:
-            model = build_model10(d1, d2, od)  # ResNet 2D 50
+            model = build_model10(d1, d2, od, **MODEL_STRUCT_CONFIG_RESNET)  # ResNet 2D 50
 
         elif num_model == 150:
             model = build_model150(d1, d2, od)  # Complex ResNet 2D 10
@@ -118,6 +139,7 @@ if __name__ == '__main__':
             target = model(inputs)
             model = Model(inputs, [target])
 
+            model = multi_gpu_model(model, gpus=n_gpu)
         return model
 
     def test_model(model, x_list, y_list, pbs, modelname, path_save, **kwargs):
@@ -290,6 +312,7 @@ if __name__ == '__main__':
         optimizer_type = paras['optimizer'] if 'optimizer' in paras.keys() else 'adam'
         pbs = paras['pbs'] if 'pbs' in paras.keys() else 256
         subset_acc_name = paras['subset_acc_name'] if 'subset_acc_name' in paras.keys() else 'subset_acc_nhot'
+        shuffle = paras['shuffle'] if 'shuffle' in paras.keys() else True
 
         x_train, x_val, _ = x_list
         y_train, y_val, _ = y_list
@@ -340,7 +363,7 @@ if __name__ == '__main__':
             x_train, y_train,
             epochs=epochs,
             batch_size=batch_size,
-            shuffle=True,
+            shuffle=shuffle,
             validation_data=(x_val, y_val),
             callbacks=[TensorBoard(log_dir=path_board), checkpoint])
 
@@ -381,11 +404,6 @@ if __name__ == '__main__':
         model.save(os.path.join(path_save_model, modelname+'.h5'))
 
         test_model(model, x_list, y_list, pbs, modelname, path_save)
-
-        if 'test_check_models' in paras.keys() and paras['test_check_models']:
-            test_check_models(path_save_model, x_list, y_list,
-                              paras['num_model'], pbs, paras['kw_model'],
-                              paras['mode_load'], paras['dict_model_load'])
 
     def load_data(path_data=None, path_root=None, form_src='None', scaler_data='or', sub_set_way='rand', **kwargs):
         """Load data from files.
@@ -512,7 +530,7 @@ if __name__ == '__main__':
         if dim_input == 1:  # only for 1D network input
             x = np.asarray(x).transpose(0, 2, 1)  # (n_samples, fl, 1)
         elif dim_input == 2:  # only for 2D network input
-            x = np.expand_dims(x, -1)  # (n_samples, t, fl, 1)
+            x = np.expand_dims(np.asarray(x), -1)  # (n_samples, t, fl, 1)
 
         if min_input > 0:
             if dim_input == 2:  # only for 2D input padding, input size must >= (32, 32, 1)
@@ -571,9 +589,9 @@ if __name__ == '__main__':
             y_list (list[np.ndarray]): standardized output datasets.
         """
         if test_few:  # only for test few samples
-            x_list[0], y_list[0] = x_list[0][:6, :, :], y_list[0][:6, :, :]
-            x_list[1], y_list[1] = x_list[1][:2, :, :], y_list[1][:2, :, :]
-            x_list[2], y_list[2] = x_list[2][:2, :, :], y_list[2][:2, :, :]
+            x_list[0], y_list[0] = x_list[0][:6], y_list[0][:6]
+            x_list[1], y_list[1] = x_list[1][:2], y_list[1][:2]
+            x_list[2], y_list[2] = x_list[2][:2], y_list[2][:2]
 
         for i, (x_i, y_i) in enumerate(zip(x_list, y_list)):
             x_list[i] = standar_x(x_i, dim_input, min_input)
@@ -645,7 +663,6 @@ if __name__ == '__main__':
             y_standard_list.append(y_i_standard)
         save_datas(dict(zip(y_filenames, y_standard_list)), path_real_img)
 
-    from models.models_recognition import build_model, build_model2, build_model3, build_model4
     from models.models_recognition import build_model90, build_model9, build_model6, build_model5
     from models.models_recognition import build_model7, build_model8
     from models.models_recognition import build_model120, build_model12, build_model13, build_model10
@@ -677,7 +694,7 @@ if __name__ == '__main__':
         subset_acc_name = kwargs['subset_acc_name'] if 'subset_acc_name' in kwargs.keys() else 'subset_acc_nhot'
 
         if 90 in model_list:
-            model90 = build_model90(d1, d2, od)  # ResNet 1D 10
+            model90 = build_model90(d1, d2, od, **MODEL_STRUCT_CONFIG_RESNET)  # ResNet 1D 10
             path_result = os.path.join(path_save, 'model_90_1_4')
             paras = {'i':i, 'j':j, 'epochs':100, 'batch_size':64, 'n_gpu':N_GPU, 'subset_acc_name':subset_acc_name}
             train_model(model=model90, paras=paras, x_list=x_list, y_list=y_list, path_save=path_result)
@@ -685,7 +702,7 @@ if __name__ == '__main__':
             gc.collect()
 
         if 9 in model_list:
-            model9 = build_model9(d1, d2, od)  # ResNet 1D 18
+            model9 = build_model9(d1, d2, od, **MODEL_STRUCT_CONFIG_RESNET)  # ResNet 1D 18
             path_result = os.path.join(path_save, 'model_9_1_4')
             paras = {'i':i, 'j':j, 'epochs':100, 'batch_size':64, 'n_gpu':N_GPU, 'subset_acc_name':subset_acc_name}
             train_model(model=model9, paras=paras, x_list=x_list, y_list=y_list, path_save=path_result)
@@ -693,7 +710,7 @@ if __name__ == '__main__':
             gc.collect()
 
         if 6 in model_list:
-            model6 = build_model6(d1, d2, od)  # ResNet 1D 34
+            model6 = build_model6(d1, d2, od, **MODEL_STRUCT_CONFIG_RESNET)  # ResNet 1D 34
             path_result = os.path.join(path_save, 'model_6_1_4')
             paras = {'i':i, 'j':j, 'epochs':100, 'batch_size':64, 'n_gpu':N_GPU, 'subset_acc_name':subset_acc_name}
             train_model(model=model6, paras=paras, x_list=x_list, y_list=y_list, path_save=path_result)
@@ -701,7 +718,7 @@ if __name__ == '__main__':
             gc.collect()
 
         if 5 in model_list:
-            model5 = build_model5(d1, d2, od)  # ResNet 1D 50
+            model5 = build_model5(d1, d2, od, **MODEL_STRUCT_CONFIG_RESNET)  # ResNet 1D 50
             path_result = os.path.join(path_save, 'model_5_1_4')
             paras = {'i':i, 'j':j, 'epochs':100, 'batch_size':64, 'n_gpu':N_GPU, 'subset_acc_name':subset_acc_name}
             train_model(model=model5, paras=paras, x_list=x_list, y_list=y_list, path_save=path_result)
@@ -725,7 +742,7 @@ if __name__ == '__main__':
             gc.collect()
 
         if 120 in model_list:
-            model120 = build_model120(d1, d2, od)  # ResNet 2D 10
+            model120 = build_model120(d1, d2, od, **MODEL_STRUCT_CONFIG_RESNET)  # ResNet 2D 10
             path_result = os.path.join(path_save, 'model_120_1_1')
             paras = {'i':i, 'j':j, 'epochs':100, 'batch_size':64, 'n_gpu':N_GPU, 'subset_acc_name':subset_acc_name}
             train_model(model=model120, x_list=x_list, y_list=y_list, paras=paras, path_save=path_result)
@@ -733,23 +750,23 @@ if __name__ == '__main__':
             gc.collect()
 
         if 12 in model_list:
-            model12 = build_model12(d1, d2, od)  # ResNet 2D 18
+            model12 = build_model12(d1, d2, od, **MODEL_STRUCT_CONFIG_RESNET)  # ResNet 2D 18
             path_result = os.path.join(path_save, 'model_12_1_3')
-            paras = {'i':i, 'j':j, 'epochs':100, 'batch_size':10, 'n_gpu':N_GPU, 'test_check_models':False, 'subset_acc_name':subset_acc_name}
+            paras = {'i':i, 'j':j, 'epochs':100, 'batch_size':10, 'n_gpu':N_GPU, 'subset_acc_name':subset_acc_name}
             train_model(model=model12, x_list=x_list, y_list=y_list, paras=paras, path_save=path_result)
             del model12
             gc.collect()
 
         if 13 in model_list:
-            model13 = build_model13(d1, d2, od)  # ResNet 2D 34
+            model13 = build_model13(d1, d2, od, **MODEL_STRUCT_CONFIG_RESNET)  # ResNet 2D 34
             path_result = os.path.join(path_save, 'model_13_1_3')
-            paras = {'i':i, 'j':j, 'epochs':100, 'batch_size':10, 'n_gpu':N_GPU, 'test_check_models':False, 'subset_acc_name':subset_acc_name}
+            paras = {'i':i, 'j':j, 'epochs':100, 'batch_size':10, 'n_gpu':N_GPU, 'subset_acc_name':subset_acc_name}
             train_model(model=model13, x_list=x_list, y_list=y_list, paras=paras, path_save=path_result)
             del model13
             gc.collect()
 
         if 10 in model_list:
-            model10 = build_model10(d1, d2, od)  # ResNet 2D 50
+            model10 = build_model10(d1, d2, od, **MODEL_STRUCT_CONFIG_RESNET)  # ResNet 2D 50
             path_result = os.path.join(path_save, 'model_10_1_3')
             paras = {'i':i, 'j':j, 'epochs':100, 'batch_size':10, 'n_gpu':N_GPU, 'subset_acc_name':subset_acc_name}
             train_model(model=model10, x_list=x_list, y_list=y_list, paras=paras, path_save=path_result)
@@ -775,7 +792,7 @@ if __name__ == '__main__':
         if 150 in model_list:
             model150 = build_model150(d1, d2, od)  # Complex ResNet 2D 10
             path_result = os.path.join(path_save, 'model_150_1_1')
-            paras = {'i':i, 'j':j, 'epochs':100, 'batch_size':10, 'n_gpu':N_GPU, 'subset_acc_name':subset_acc_name}
+            paras = {'i':i, 'j':j, 'epochs':100, 'batch_size':10, 'n_gpu':N_GPU, 'shuffle':'batch', 'subset_acc_name':subset_acc_name}
             train_model(model=model150, x_list=x_list, y_list=y_list, paras=paras, path_save=path_result)
             del model150
             gc.collect()
@@ -783,7 +800,7 @@ if __name__ == '__main__':
         if 15 in model_list:
             model15 = build_model15(d1, d2, od)  # Complex ResNet 2D 18
             path_result = os.path.join(path_save, 'model_15_1_1')
-            paras = {'i':i, 'j':j, 'epochs':100, 'batch_size':10, 'n_gpu':N_GPU, 'subset_acc_name':subset_acc_name}
+            paras = {'i':i, 'j':j, 'epochs':100, 'batch_size':10, 'n_gpu':N_GPU, 'shuffle':'batch', 'subset_acc_name':subset_acc_name}
             train_model(model=model15, x_list=x_list, y_list=y_list, paras=paras, path_save=path_result)
             del model15
             gc.collect()
@@ -791,7 +808,7 @@ if __name__ == '__main__':
         if 16 in model_list:
             model16 = build_model16(d1, d2, od)  # Complex ResNet 2D 34
             path_result = os.path.join(path_save, 'model_16_1_1')
-            paras = {'i':i, 'j':j, 'epochs':100, 'batch_size':10, 'n_gpu':N_GPU, 'subset_acc_name':subset_acc_name}
+            paras = {'i':i, 'j':j, 'epochs':100, 'batch_size':10, 'n_gpu':N_GPU, 'shuffle':'batch', 'subset_acc_name':subset_acc_name}
             train_model(model=model16, x_list=x_list, y_list=y_list, paras=paras, path_save=path_result)
             del model16
             gc.collect()
@@ -799,7 +816,7 @@ if __name__ == '__main__':
         if 17 in model_list:
             model17 = build_model17(d1, d2, od)  # Complex ResNet 2D 50
             path_result = os.path.join(path_save, 'model_17_1_1')
-            paras = {'i':i, 'j':j, 'epochs':100, 'batch_size':10, 'n_gpu':N_GPU, 'subset_acc_name':subset_acc_name}
+            paras = {'i':i, 'j':j, 'epochs':100, 'batch_size':10, 'n_gpu':N_GPU, 'shuffle':'batch', 'subset_acc_name':subset_acc_name}
             train_model(model=model17, x_list=x_list, y_list=y_list, paras=paras, path_save=path_result)
             del model17
             gc.collect()
@@ -807,7 +824,7 @@ if __name__ == '__main__':
         if 18 in model_list:
             model18 = build_model18(d1, d2, od)  # Complex DenseNet 2D 121
             path_result = os.path.join(path_save, 'model_18_1_1')
-            paras = {'i':i, 'j':j, 'epochs':100, 'batch_size':10, 'n_gpu':N_GPU, 'subset_acc_name':subset_acc_name}
+            paras = {'i':i, 'j':j, 'epochs':100, 'batch_size':10, 'n_gpu':N_GPU, 'shuffle':'batch', 'subset_acc_name':subset_acc_name}
             train_model(model=model18, x_list=x_list, y_list=y_list, paras=paras, path_save=path_result)
             del model18
             gc.collect()
@@ -815,7 +832,7 @@ if __name__ == '__main__':
         if 19 in model_list:
             model19 = build_model19(d1, d2, od)  # Complex DenseNet 2D 169
             path_result = os.path.join(path_save, 'model_19_1_1')
-            paras = {'i':i, 'j':j, 'epochs':100, 'batch_size':10, 'n_gpu':N_GPU, 'subset_acc_name':subset_acc_name}
+            paras = {'i':i, 'j':j, 'epochs':100, 'batch_size':10, 'n_gpu':N_GPU, 'shuffle':'batch', 'subset_acc_name':subset_acc_name}
             train_model(model=model19, x_list=x_list, y_list=y_list, paras=paras, path_save=path_result)
             del model19
             gc.collect()
@@ -925,13 +942,14 @@ if __name__ == '__main__':
             search_models(x_list, y_list, [7, 8], path_save, **{'i':i, 'j':j, 'subset_acc_name':subset_acc_name})
 
     test_all_check_models(path_save, x_list=x_list, y_list=y_list, num_models=[7, 8], model_load=0,
-                          dict_model_load=DICT_MODEL_CONFIG, **{'subset_acc_name':subset_acc_name})
-#    test_all_check_models(path_save, x_list=x_list, y_list=y_list, num_models=[7, 8], model_load=3,
-#                          dict_model_load={**DICT_MODEL_CONFIG, **DICT_MODEL_STRUCT},
-#                          kw_model='.hdf5',
-#                          **DICT_MODEL_COMPILE)
+                          dict_model_load=DICT_MODEL_CONFIG,
+                          **{'subset_acc_name':subset_acc_name, 'n_gpu':N_GPU})
+ #    test_all_check_models(path_save, x_list=x_list, y_list=y_list, num_models=[7, 8], model_load=3,
+ #                          dict_model_load={**DICT_MODEL_CONFIG, **DICT_MODEL_STRUCT},
+ #                          kw_model='.hdf5',
+ #                          **DICT_MODEL_COMPILE)
 
-    y_list = [np.squeeze(y_i) for y_i in y_list]  # (n_samples, od)
+    y_list = [standar_y(y_i, dim_output=1) for y_i in y_list]  # (n_samples, od)
 
     for i in range(1, 2):
         for j in range(-3, -4, -1):
@@ -956,10 +974,10 @@ if __name__ == '__main__':
             search_models(x_list, y_list, [7, 8], path_save, **{'i':i, 'j':j, 'subset_acc_name':subset_acc_name})
 
     test_all_check_models(path_save, x_list=x_list, y_list=y_list, num_models=[7, 8], model_load=0,
-                            dict_model_load=DICT_MODEL_CONFIG, **{'subset_acc_name':subset_acc_name})
+                          dict_model_load=DICT_MODEL_CONFIG, **{'subset_acc_name':subset_acc_name, 'n_gpu':N_GPU})
 
 
-    y_list = [np.squeeze(y_i) for y_i in y_list]  # (n_samples, od)
+    y_list = [standar_y(y_i, dim_output=1) for y_i in y_list]  # (n_samples, od)
     for i in range(1, 2):
         for j in range(-3, -4, -1):
             search_models(x_list, y_list, [9, 6, 5], path_save, **{'i':i, 'j':j, 'subset_acc_name':subset_acc_name})
@@ -986,9 +1004,9 @@ if __name__ == '__main__':
                 search_models(x_list, y_list, [11, 14], path_save, **{'i':i, 'j':j, 'subset_acc_name':subset_acc_name})
 
         test_all_check_models(path_save, x_list=x_list, y_list=y_list, num_models=[11, 14], model_load=0,
-                              dict_model_load=DICT_MODEL_CONFIG, **{'subset_acc_name':subset_acc_name})
+                              dict_model_load=DICT_MODEL_CONFIG, **{'subset_acc_name':subset_acc_name, 'n_gpu':N_GPU})
 
-        y_list = [np.squeeze(y_i) for y_i in y_list]  # (n_samples, od)
+    	y_list = [standar_y(y_i, dim_output=1) for y_i in y_list]  # (n_samples, od)
 
         for i in range(1, 2):
             for j in range(-3, -4, -1):
@@ -1018,9 +1036,9 @@ if __name__ == '__main__':
                     search_models(x_list, y_list, [11, 14], path_save, **{'i':i, 'j':j, 'subset_acc_name':subset_acc_name})
 
             test_all_check_models(path_save, x_list=x_list, y_list=y_list, num_models=[11, 14], model_load=0,
-                                dict_model_load=DICT_MODEL_CONFIG, **{'subset_acc_name':subset_acc_name})
+                                  dict_model_load=DICT_MODEL_CONFIG, **{'subset_acc_name':subset_acc_name, 'n_gpu':N_GPU})
 
-            y_list = [np.squeeze(y_i) for y_i in y_list]  # (n_samples, od)
+            y_list = [standar_y(y_i, dim_output=1) for y_i in y_list]  # (n_samples, od)
             for i in range(1, 2):
                 for j in range(-3, -4, -1):
                     search_models(x_list, y_list, [120, 12, 13, 10], path_save, **{'i':i, 'j':j, 'subset_acc_name':subset_acc_name})
@@ -1052,9 +1070,9 @@ if __name__ == '__main__':
                         search_models(x_list, y_list, [11, 14], path_save, **{'i':i, 'j':j, 'subset_acc_name':subset_acc_name})
 
                 test_all_check_models(path_save, x_list=x_list, y_list=y_list, num_models=[11, 14], model_load=0,
-                                    dict_model_load=DICT_MODEL_CONFIG, **{'subset_acc_name':subset_acc_name})
+                                    dict_model_load=DICT_MODEL_CONFIG, **{'subset_acc_name':subset_acc_name, 'n_gpu':N_GPU})
 
-                y_list = [np.squeeze(y_i) for y_i in y_list]  # (n_samples, od)
+                y_list = [standar_y(y_i, dim_output=1) for y_i in y_list]  # (n_samples, od)
                 for i in range(1, 2):
                     for j in range(-3, -4, -1):
                         search_models(x_list, y_list, [120, 12, 13, 10], path_save, **{'i':i, 'j':j, 'subset_acc_name':subset_acc_name})
@@ -1084,7 +1102,7 @@ if __name__ == '__main__':
             test_all_check_models(path_save, x_list=x_list, y_list=y_list, num_models=[7, 8], model_load=0,
                                     dict_model_load=DICT_MODEL_CONFIG, **{'subset_acc_name':subset_acc_name})
 
-            y_list = [np.squeeze(y_i) for y_i in y_list]  # (n_samples, od)
+            y_list = [standar_y(y_i, dim_output=1) for y_i in y_list]  # (n_samples, od)
             for i in range(1, 2):
                 for j in range(-3, -4, -1):
                     search_models(x_list, y_list, [90, 9, 6, 5], path_save, **{'i':i, 'j':j, 'subset_acc_name':subset_acc_name})
@@ -1101,19 +1119,59 @@ if __name__ == '__main__':
     for win_i, hop_i in zip(WIN_LIST, HOP_LIST):
         path_save = os.path.join(PATH_SAVE_ROOT, f'real_img_spectrum_{win_i}_{hop_i}_or_rand')
         mkdir(path_save)
-        real_x_list, y_list = load_data(path_root=PATH_ROOT, form_src='realspectrum', scaler_data='or', sub_set_way='rand',
-                                        **{'win_length':win_i, 'hop_length':hop_i})
-        real_x_list, y_list = standar_datas(real_x_list, y_list, 2, 1, test_few=False)
 
-        img_x_list, y_list = load_data(path_root=PATH_ROOT, form_src='imgspectrum', scaler_data='or', sub_set_way='rand',
-                                        **{'win_length':win_i, 'hop_length':hop_i})
-        img_x_list, y_list = standar_datas(img_x_list, y_list, 2, 1, test_few=False)
+        path_real_img = os.path.join(PathSourceRoot(PATH_ROOT).path_mix_root,
+                                     f'real_img_spectrum_{win_i}_{hop_i}', 'original_rand')
+        mkdir(path_real_img)
+    # --------------------------------------------------------------------------
+        # only for first time creat data.
+        real_x_list, _ = load_data(path_root=PATH_ROOT, form_src='realspectrum', scaler_data='or', sub_set_way='rand',
+                                   **{'win_length':win_i, 'hop_length':hop_i})
+        img_x_list, _ = load_data(path_root=PATH_ROOT, form_src='imgspectrum', scaler_data='or', sub_set_way='rand',
+                                  **{'win_length':win_i, 'hop_length':hop_i})
+        for name_i, real_i, img_i in zip(['X_train', 'X_val', 'X_test'], real_x_list, img_x_list):
+            file_name_i = os.path.join(path_real_img, f'{name_i}.hdf5')
+            for j in range(real_i.shape[0]):
+                real_ij, img_ij = real_i[j:j+1], img_i[j:j+1]
+                real_ij_standard = standar_x(real_ij, 2)
+                img_ij_standard = standar_x(img_ij, 2)
+                complex_ij = np.concatenate([real_ij_standard, img_ij_standard], axis=-1)
+                if j == 0:
+                    with h5py.File(file_name_i, 'w') as f_w:
+                        f_w.create_dataset(
+                            'data', data=complex_ij, dtype=np.float32,
+                            chunks=(complex_ij.ndim-2)*(1,)+complex_ij.shape[-2:],
+                            maxshape=((None,)+complex_ij.shape[1:]),
+                            compression="gzip", compression_opts=9)
+                else:
+                    with h5py.File(file_name_i, 'a') as f_a:
+                        f_a['data'].resize((f_a['data'].shape[0]+complex_ij.shape[0]), axis=0)
+                        f_a['data'][-complex_ij.shape[0]:] = complex_ij
+        
+        y_filenames = ['Y_train', 'Y_val', 'Y_test']
+        y_filetype = '.hdf5'
+        path_source_in = PathSourceRoot(
+            PATH_ROOT, form_src='realspectrum', win_length=win_i, hop_length=hop_i,
+            scaler_data='or', sub_set_way='rand').path_source
+        y_list = read_datas(path_source_in, y_filenames)
+        y_standard_list = []
+        for y_i in y_list:
+            y_i_standard = standar_y(y_i, dim_output=1)
+            y_standard_list.append(y_i_standard)
+        save_datas(dict(zip(y_filenames, y_standard_list)), path_real_img)
+    # --------------------------------------------------------------------------
+        x_list, y_list = load_data(path_real_img)        
+        # # only for test few samples
+        # x_list[0], y_list[0] = x_list[0][:6], y_list[0][:6]
+        # x_list[1], y_list[1] = x_list[1][:2], y_list[1][:2]
+        # x_list[2], y_list[2] = x_list[2][:2], y_list[2][:2]
 
-        x_list = [np.concatenate([real_i, img_i], axis=-1) for real_i, img_i in zip(real_x_list, img_x_list)]
+        y_list = [standar_y(y_i, dim_output=1) for y_i in y_list]  # (n_samples, od)
 
         for i in range(1, 2):
             for j in range(-3, -4, -1):
-                search_models(x_list, y_list, [150, 15, 16, 17, 18, 19], path_save, **{'i':i, 'j':j, 'subset_acc_name':subset_acc_name})
+                search_models(x_list, y_list, [150, 15, 16, 17, 18, 19], path_save,
+                			  **{'i':i, 'j':j, 'subset_acc_name':subset_acc_name})
 
         test_all_check_models(path_save, x_list=x_list, y_list=y_list,
                                 num_models=[150, 15, 16, 17, 18, 19], model_load=3,
@@ -1144,7 +1202,8 @@ if __name__ == '__main__':
 
         for i in range(1, 2):
             for j in range(-3, -4, -1):
-                search_models(x_list, y_list, [200, 20, 21, 22, 23, 24], path_save, **{'i':i, 'j':j, 'subset_acc_name':subset_acc_name})
+                search_models(x_list, y_list, [200, 20, 21, 22, 23, 24], path_save,
+                			  **{'i':i, 'j':j, 'subset_acc_name':subset_acc_name})
 
         test_all_check_models(path_save, x_list=x_list, y_list=y_list,
                               num_models=[200, 20, 21, 22, 23, 24], model_load=3,
