@@ -36,6 +36,7 @@ def list_files(path, full=True):
         logging.warning('After sort file_names changed.')
     return full_names_sorted
 
+
 def list_files_filter(path, full=True, filter_func=None):
     """Return list[str] names of the files in the path."""
 
@@ -55,10 +56,12 @@ def list_files_filter(path, full=True, filter_func=None):
         logging.warning('After sort file_names changed.')
     return full_names_sorted
 
+
 def list_files_end_str(path, str_end, full=True):
     """Return list[str] names of the files, end with str_end, in the path."""
 
     return list_files_filter(path, full, lambda file_name: file_name.endswith(str_end))
+
 
 def list_dirs(path, full=True):
     """Return list[str] names of the dirs in the path.
@@ -80,6 +83,7 @@ def list_dirs(path, full=True):
         logging.warning('After sort dir_names changed.')
     return full_names_sorted
 
+
 def list_dirs_filter(path, full=True, filter_func=None):
     """Return list[str] names of the dirs in the path."""
 
@@ -99,10 +103,12 @@ def list_dirs_filter(path, full=True, filter_func=None):
         logging.warning('After sort dir_names changed.')
     return full_names_sorted
 
+
 def list_dirs_start_str(path, str_start, full=True):
     """Return list[str] names of the dirs, start with str_start, in the path."""
 
     return list_dirs_filter(path, full, lambda file_name: file_name.startswith(str_start))
+
 
 def walk_dirs(path, full=True):
     """Return list[str] names of the dirs multi-under path without path itself."""
@@ -116,6 +122,7 @@ def walk_dirs(path, full=True):
     if not full_names == full_names_sorted:
         logging.warning('After sort dir_names changed.')
     return full_names_sorted
+
 
 def walk_dirs_filter(path, full=True, filter_func=None):
     """Return list[str] names of the dirs multi-under path without path itself."""
@@ -133,6 +140,7 @@ def walk_dirs_filter(path, full=True, filter_func=None):
     if not full_names == full_names_sorted:
         logging.warning('After sort dir_names changed.')
     return full_names_sorted
+
 
 def walk_dirs_start_str(path, str_start, full=True):
     """Return list[str] names of the dirs, start with str_start,
@@ -154,6 +162,7 @@ def walk_files(path, full=True):
         logging.warning('After sort file_names changed.')
     return full_names_sorted
 
+
 def walk_files_filter(path, full=True, filter_func=None):
     """Return list[str] dir and file names multi-under path without path itself."""
 
@@ -170,6 +179,7 @@ def walk_files_filter(path, full=True, filter_func=None):
     if not full_names == full_names_sorted:
         logging.warning('After sort file_names changed.')
     return full_names_sorted
+
 
 def walk_files_end_str(path, str_end, full=True):
     """Return list[str] dir and file names, end with str_end,
@@ -201,7 +211,7 @@ def mkdir(path):
 def mycopyfile(srcfile, dstfile):
     """Copy file from srcfile to dstfile."""
     if not os.path.isfile(srcfile):
-        raise Exception(f'Source file {srcfile} not exist.')
+        raise Exception('Source file '+srcfile+' not exist.')
     else:
         fpath, fname = os.path.split(dstfile)  # split path and filename
         if not os.path.exists(fpath):
@@ -214,7 +224,7 @@ def copy_files(srcpath, dstpath, srcnames, dstnames):
     """Copy srcnames from srcpath to dstpath and rename to dstnames."""
     for srcname, dstname in zip(srcnames, dstnames):
         if not os.path.isfile(os.path.join(srcpath, srcname)):
-            raise ParameterError(f'Source file {srcname} not exist.')
+            raise ParameterError('Source file '+srcname+' not exist.')
         else:
             if not os.path.exists(dstpath):
                 os.makedirs(dstpath)
@@ -229,12 +239,14 @@ def read_wavs_to_np(path, sr, mono):  # pylint: disable=invalid-name
     sources = [librosa.load(fi, sr, mono)[0] for fi in filenames]
     return sources
 
+
 def read_wavs_to_list(path, sr, mono):  # pylint: disable=invalid-name
     """Read .wav files, return 2d-list[[float]], using librosa."""
     import librosa
     filenames = walk_files_end_str(path, '.wav')
     sources = [librosa.load(fi, sr, mono)[0].tolist() for fi in filenames]
     return sources  # return 1D list [frame][fl]
+
 
 def read_1d_mats_to_list(path):
     """Read .mat files, return 2d-list[[float]]."""

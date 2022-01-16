@@ -6,11 +6,10 @@ Created on Thu May 31 17:14:53 2018
 E-mail: sun10qinggang@163.com
 
 """
+from error import Error, ParameterError
+import logging
 import numpy as np
 np.random.seed(1337)
-import logging
-
-from error import Error, ParameterError
 
 
 def balancesets(sets):
@@ -23,12 +22,14 @@ def balancesets(sets):
     lis = [len(si) for si in sets]
     num = min(lis)
 
-    for i in range(len(sets)): # pylint: disable=consider-using-enumerate
+    for i in range(len(sets)):  # pylint: disable=consider-using-enumerate
         sets[i] = sets[i][0:num]
     return sets  # dimension not changed
 
+
 class Subsets(object):
     """Split datas in to train, val, test subsets."""
+
     def __init__(self, rates, ndata):
         self.rates = rates
         self.ndata = ndata
@@ -105,6 +106,7 @@ def shuffle_sets(ni_3d):
         nsets.append(rand_ni_setj)
     return nsets  # return 2D list [subset][(source, numi)]
 
+
 def mixaddframes_np(frames):
     """Input 2D list frames [source][frames][fl],
     output 1D list of mix using average add"""
@@ -116,18 +118,6 @@ def mixaddframes_np(frames):
     mix = np.average(frames, axis=0)
     return np.asarray(mix, dtype=np.float32)
 
-def snr_np(x1, x2):
-    """Computing SNR using numpy.
-
-    Args:
-        x1 (np.ndarray, shape==(1,)): signal.
-        x2 (np.ndarray, shape==(1,)): noise.
-
-    Returns:
-        float: SNR in dB.
-    """
-    import numpy as np
-    return 20 * np.log10(np.sum(x1**2) / np.sum(x2**2))
 
 def ld3_to_ld2(ld3):
     """3D list to 2D list.
@@ -138,6 +128,7 @@ def ld3_to_ld2(ld3):
         ld2 += ld3i
     return ld2
 
+
 def nhot_3to4(nhot_3):
     """Input: np.ndarray shape (1,3)
     Return: np.ndarray shape (1, 4)."""
@@ -145,6 +136,7 @@ def nhot_3to4(nhot_3):
     nhot_4[0, 1:] = nhot_3
     nhot_4[0, 0] = 0 if np.any(nhot_3) else 1
     return nhot_4
+
 
 def filter_data(x, y, condiction='one'):
     """Filter specific_data."""

@@ -14,6 +14,7 @@ from numpy import square, sqrt, mean, abs
 from scipy.signal import butter, lfilter, decimate, hilbert
 from error import Error, ParameterError
 
+
 def subframe_np(sources, fl, fs, scale=False):  # pylint: disable=invalid-name
     """Cuting sources to frames using librosa.
     Args:
@@ -24,7 +25,7 @@ def subframe_np(sources, fl, fs, scale=False):  # pylint: disable=invalid-name
     Returns:
         frames (list[np.ndarray,shape==(n_samples, fl)]): frames after cut.
     """
-    if scale is True: # scale from [-1,1] to [0,1]
+    if scale is True:  # scale from [-1,1] to [0,1]
         for si in sources:  # pylint: disable=invalid-name
             si = si + 1.0  # pylint: disable=invalid-name
             si = si * 0.5  # pylint: disable=invalid-name
@@ -34,8 +35,9 @@ def subframe_np(sources, fl, fs, scale=False):  # pylint: disable=invalid-name
         frames = [librosa.util.frame(si, fl, fs).T for si in sources]  # (fl, n_samples)
     return frames
 
+
 def magnitude_spectrum(source, window, win_length, hop_length, n_fft, center=False,
-    dtype=np.complex64, fix_length=False):  # pylint: disable=too-many-arguments
+                       dtype=np.complex64, fix_length=False):  # pylint: disable=too-many-arguments
     """Input 1D frame (must shape (fl,)), return magnitude spectrum shape (1+n_fft/2,t)."""
     if fix_length:
         source = librosa.util.fix_length(source, len(source) + n_fft // 2)
@@ -48,8 +50,9 @@ def magnitude_spectrum(source, window, win_length, hop_length, n_fft, center=Fal
     feature = magnitude.transpose()
     return feature  # (t, 1+n_fft/2)
 
+
 def angle_spectrum(source, window, win_length, hop_length, n_fft, center=False,
-    dtype=np.complex64, fix_length=False):  # pylint: disable=too-many-arguments
+                   dtype=np.complex64, fix_length=False):  # pylint: disable=too-many-arguments
     """Input 1D frame (must shape (fl,)), return angle spectrum shape (1+n_fft/2,t)."""
     if fix_length:
         source = librosa.util.fix_length(source, len(source) + n_fft // 2)
@@ -62,8 +65,9 @@ def angle_spectrum(source, window, win_length, hop_length, n_fft, center=False,
     feature = angle.transpose()
     return feature  # (t, 1+n_fft/2)
 
+
 def real_spectrum(source, window, win_length, hop_length, n_fft, center=False,
-    dtype=np.complex64, fix_length=False):  # pylint: disable=too-many-arguments
+                  dtype=np.complex64, fix_length=False):  # pylint: disable=too-many-arguments
     """Input 1D frame (must shape (fl,)), return image spectrum shape (1+n_fft/2,t)."""
     if fix_length:
         source = librosa.util.fix_length(source, len(source) + n_fft // 2)
@@ -73,8 +77,9 @@ def real_spectrum(source, window, win_length, hop_length, n_fft, center=False,
     feature = real.transpose()
     return feature  # (t, 1+n_fft/2)
 
+
 def image_spectrum(source, window, win_length, hop_length, n_fft, center=False,
-    dtype=np.complex64, fix_length=False):  # pylint: disable=too-many-arguments
+                   dtype=np.complex64, fix_length=False):  # pylint: disable=too-many-arguments
     """Input 1D frame (must shape (fl,)), return image spectrum shape (1+n_fft/2,t)."""
     if fix_length:
         source = librosa.util.fix_length(source, len(source) + n_fft // 2)
@@ -84,8 +89,9 @@ def image_spectrum(source, window, win_length, hop_length, n_fft, center=False,
     feature = image.transpose()
     return feature  # (t, 1+n_fft/2)
 
+
 def mel_spectrum(source, sr=22050, S=None, n_fft=2048, win_length=None, hop_length=512, window='hann',
-    center=False, pad_mode='reflect', power=2.0, **kwargs):
+                 center=False, pad_mode='reflect', power=2.0, **kwargs):
     """input 1D frame (must shape (fl,)), return mel-scaled spectrogram.
     If a spectrogram input `S` is provided, then it is mapped directly onto
     the mel basis `mel_f` by `mel_f.dot(S)`.
@@ -113,15 +119,17 @@ def mel_spectrum(source, sr=22050, S=None, n_fft=2048, win_length=None, hop_leng
 
     return feature
 
+
 def logmel_spectrum(source=None, sr=22050, S=None, n_fft=2048, win_length=None, hop_length=512, window='hann',
-    center=False, pad_mode='reflect', power=2.0, **kwargs):
+                    center=False, pad_mode='reflect', power=2.0, **kwargs):
     """Input 1d source or power spectrogram S, return Log-Mel Spectrogram."""
 
     melspec = mel_spectrum(source, sr, S, n_fft, win_length, hop_length, window,
-        center, pad_mode, power, **kwargs)
+                           center, pad_mode, power, **kwargs)
     feature = librosa.amplitude_to_db(melspec).transpose()
 
     return feature  # (t, n_mel)
+
 
 def mfcc(source, sr=22050, S=None, n_mfcc=20, dct_type=2, norm='ortho', lifter=0, **kwargs):
     """Input 1D frame (must shape (fl,)), or log-power Mel spectrogram,
@@ -147,6 +155,7 @@ def mfcc(source, sr=22050, S=None, n_mfcc=20, dct_type=2, norm='ortho', lifter=0
         dct_type=dct_type, norm=norm, lifter=lifter, **kwargs).transpose()
 
     return feature  # (t, n_mfcc)
+
 
 def demon(source, high=30000, low=20000, cutoff=1000.0, fs=200000, mode='square_law'):
     """
@@ -211,6 +220,8 @@ def demon(source, high=30000, low=20000, cutoff=1000.0, fs=200000, mode='square_
     features = x - mean(x)
 
     return features
+
+
 
 def feature_extract(feature, **kwargs):
     """Extrct a feature of wav frame.

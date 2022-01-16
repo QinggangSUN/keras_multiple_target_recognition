@@ -19,12 +19,14 @@ _FRAME_LENGTH = 10547    # ~200ms 10546.800 000 000 001
 _FRAME_SHIFT = 10547
 # _FRAME_SHIFT = 2636     # 10547/4 = 2636.7
 
+
 def get_sr():
     """Return const global variable _SR.
     Returns:
         _SR (int): sample rate.
     """
     return _SR
+
 
 # output mix features
 # _WIN_LENGTH = _FRAME_LENGTH
@@ -34,6 +36,7 @@ _WIN_LENGTH = 1582     # 52734*0.03 = 1582.02
 _HOP_LENGTH = 396      # 52734*0.03/4 = 395.505
 # _WIN_LENGTH = 1055     # 52734*0.02 = 1054.68
 # _HOP_LENGTH = 264      # 52734*0.02/4 = 263.67
+
 
 class PathSourceRootFull(PathSourceRoot):
     """Path to find sources."""
@@ -56,7 +59,6 @@ if __name__ == '__main__':
     from prepare_data_shipsear_recognition_mix_s0tos3 import data_seg_create, data_mixwav_create
     logging.basicConfig(format='%(levelname)s:%(message)s',
                         level=logging.DEBUG)
-
 
     PATH_ROOT = '/home/sqg/data/shipsEar/mix_recognition'
 

@@ -7,6 +7,8 @@ Created on Mon Jan  4 21:23:07 2021
 E-mail: sun10qinggang@163.com
 
 """
+import pandas as pd
+import gc
 import itertools
 import logging
 import numpy as np
@@ -15,6 +17,7 @@ from sklearn.metrics import confusion_matrix
 from loss_acc import round_y_pred_int_np
 from recognition_mix_shipsear_s0tos3_preprocess import n_hot_labels
 from recognition_mix_shipsear_s0tos3full3_preprocess import int_combinations, labels_int_short
+
 
 class ConfusionMatrix(object):
     """Compute confusion Matrix of samples.
@@ -51,7 +54,8 @@ class ConfusionMatrix(object):
                 [0, 0, 0, 0, 2]], dtype=int64)]
 
 
-        >>> y_pred = np.array([[0.1,0.1],[0.2,0.8],[0.9,0.1],[0.5,0.6],[0.1,0.1],[0.2,0.8],[0.9,0.1],[0.5,0.6]], dtype=np.float32)
+        >>> y_pred = np.array([[0.1,0.1],[0.2,0.8],[0.9,0.1],[0.5,0.6],[0.1,0.1],[0.2,0.8],[0.9,0.1],[0.5,0.6]],
+                              dtype=np.float32)
         >>> y_true = np.array([[0,0],[0,1],[1,0],[1,1],[0,1],[0,0],[1,1],[0,1]], dtype=np.bool)
 
         >>> source_confusion = ConfusionMatrix(y_true, y_pred)
@@ -82,11 +86,12 @@ class ConfusionMatrix(object):
          [1 0 1 1]
          [0 1 0 1]]
     """
+
     def __init__(self, y_true, y_pred, normalize=None):
         super().__init__()
         self.y_true = y_true  # np.ndarray,shape==(n_samples, 1, n_src),dtype==int: true labels of samples.
         self.y_pred = y_pred  # np.ndarray,shape==(n_samples, 1, n_src),dtype==float: predit outputs.
-        self.normalize = normalize  # str: {¡®true¡¯, ¡®pred¡¯, ¡®all¡¯}, default=None.
+        self.normalize = normalize  # str: {â€˜trueâ€™, â€˜predâ€™, â€˜allâ€™}, default=None.
         self.y_true_standard = None  # list[tuple(int)], [n_samples]: true index labels of samples.
         self.y_pred_standard = None  # list[tuple(int)], [n_samples]: predict index labels of samples.
         self.dict_labels = None  # dict map of labels and labels index.
@@ -123,8 +128,8 @@ class ConfusionMatrix(object):
         y_true_standard = []
         y_pred_standard = []
         for y_true_i, y_pred_i in zip(self.y_true, self.y_pred):
-            y_true_standard.append(dict_labels[tuple(y_true_i.reshape(-1,).tolist())])
-            y_pred_i_standard = round_y_pred_int_np(y_pred_i.reshape(-1,))
+            y_true_standard.append(dict_labels[tuple(np.asarray(y_true_i).reshape(-1,).tolist())])
+            y_pred_i_standard = round_y_pred_int_np(np.asarray(y_pred_i).reshape(-1,))
             y_pred_i_standard = np.maximum(y_pred_i_standard, 0)
             y_pred_i_standard = np.minimum(y_pred_i_standard, max_src)
             y_pred_standard.append(dict_labels[tuple(y_pred_i_standard.tolist())])
@@ -153,8 +158,8 @@ class ConfusionMatrix(object):
         y_true_list = []
         y_pred_list = []
         for y_true_i, y_pred_i in zip(self.y_true, self.y_pred):
-            y_true_list.append(tuple(y_true_i.reshape(-1,).tolist()))
-            y_pred_list.append(tuple(round_y_pred_int_np(y_pred_i.reshape(-1,)).tolist()))
+            y_true_list.append(tuple(np.asarray(y_true_i).reshape(-1,).tolist()))
+            y_pred_list.append(tuple(round_y_pred_int_np(np.asarray(y_pred_i).reshape(-1,)).tolist()))
 
         n_source = len(y_true_list[0])
         if max_src is None:
@@ -176,6 +181,7 @@ class ConfusionMatrix(object):
                                         normalize=self.normalize)
             matrix.append(matrix_j)
         return matrix
+
 
 def walk_result_dirs(path_save_root, kw_model='.hdf5', num_models=None, **kwargs):
     """Walk all check models dirs under path_save_root.
@@ -201,6 +207,7 @@ def walk_result_dirs(path_save_root, kw_model='.hdf5', num_models=None, **kwargs
             path_result_dirs.append(path_result_dirs_i)
     return path_result_dirs
 
+
 def save_dict_to_hdf5(dict_s, h5py_fob):
     """Save dictionary datas to hdf5 file using h5py.
     Args:
@@ -213,6 +220,7 @@ def save_dict_to_hdf5(dict_s, h5py_fob):
             save_dict_to_hdf5(value, fob_child)
         else:
             h5py_fob.create_dataset(str(key), data=value)
+
 
 def extract_h5py_to_list(h5py_fob, kw, level=1, deep=1, kw2=None):
     """Extract keyword data from h5py file.
@@ -236,6 +244,7 @@ def extract_h5py_to_list(h5py_fob, kw, level=1, deep=1, kw2=None):
                 grp = h5py_fob[num]
                 data_list.append([grp[kw][kw2_i] for kw2_i in kw2])
     return data_list
+
 
 def extract_h5py_to_dict(h5py_fob, kw, level=1, deep=1, kw2=None):
     """Extract keyword data from h5py file.
@@ -270,19 +279,20 @@ def extract_h5py_to_dict(h5py_fob, kw, level=1, deep=1, kw2=None):
 
     if level == 1:
         if deep == 1:
-            data_dict = {kw:[]}
+            data_dict = {kw: []}
             for num in h5py_fob.keys():
                 grp = h5py_fob[num]
                 data_dict[kw].append(np.asarray(grp[kw]))
         if deep == 2 or deep == 3:
-            data_dict = {kw:dict()}
+            data_dict = {kw: dict()}
             for kw2_i in kw2:
-                data_dict[kw].update({kw2_i:[]})
+                data_dict[kw].update({kw2_i: []})
             for num in h5py_fob.keys():
                 grp = h5py_fob[num]
                 for kw2_i in kw2:
                     data_dict[kw][kw2_i].append(np.asarray(grp[kw][kw2_i]))
     return data_dict
+
 
 def dict_to_df(data_dict, deep=1):
     """Convert dictionary of data to pandas.DataFrame.
@@ -301,7 +311,7 @@ def dict_to_df(data_dict, deep=1):
         dict_series = dict()
         name = list(data_dict.keys())[0]
         for set_name, data in data_dict[name].items():
-            dict_series.update({f'{name}_{set_name}':pd.Series(data)})
+            dict_series.update({f'{name}_{set_name}': pd.Series(data)})
         logging.debug(f'dict_series {dict_series}')
         return pd.DataFrame(dict_series)
     elif deep == 3:
@@ -310,11 +320,11 @@ def dict_to_df(data_dict, deep=1):
         for set_name, data in data_dict[name].items():
             data_trans = np.transpose(np.asarray(data))
             for i, data_i in enumerate(data_trans):
-                dict_series.update({f'{name}_{set_name}_{i}':pd.Series(data_i)})
+                dict_series.update({f'{name}_{set_name}_{i}': pd.Series(data_i)})
         logging.debug(f'dict_series {dict_series}')
         return pd.DataFrame(dict_series)
 
-import pandas as pd
+
 def save_h5py_to_csv(h5py_fob, file_csv, data_names, paras):
     """Read data from .hdf5 file, save data to .csv file.
 
@@ -344,17 +354,19 @@ def save_h5py_to_csv(h5py_fob, file_csv, data_names, paras):
     h5py_fob.close()
     return result_df
 
+
 if __name__ == '__main__':
     import h5py
-    import json
-    import logging
     import matplotlib.pyplot as plt
     from sklearn.metrics import ConfusionMatrixDisplay
     import os
     from file_operation import list_dirs, list_files_end_str, mkdir
-    from prepare_data_shipsear_recognition_mix_s0tos3 import read_data, save_datas
+    from prepare_data_shipsear_recognition_mix_s0tos3 import read_data
 
-    def walk_result_files(path_feature, kw_dir='loss'):
+    logging.basicConfig(format='%(levelname)s:%(message)s',
+                        level=logging.INFO)
+
+    def walk_result_files(path_feature, kw_dir='loss', file_type='.hdf5'):
         """Walk result files.
 
         Args:
@@ -371,7 +383,7 @@ if __name__ == '__main__':
             for path_result_dirs_j in path_result_dirs_i:
                 for path_result_dir_k in path_result_dirs_j:
                     path_result_files_i_j_k = list_files_end_str(
-                        os.path.join(path_result_dir_k, kw_dir), '.hdf5')
+                        os.path.join(path_result_dir_k, kw_dir), file_type)
                     logging.debug(path_result_files_i_j_k)
                     path_result_files += path_result_files_i_j_k
         return path_result_files
@@ -397,11 +409,23 @@ if __name__ == '__main__':
             dict_results = dict()
             for i, path_result_file in enumerate(path_result_files):
                 path, filename = os.path.split(path_result_file)
-                dict_result = {'file_name':path_result_file}
-                if ('source_confusion' in dict_metric.keys() and dict_metric['source_confusion'] or
-                    'standard_confusion' in dict_metric.keys() and dict_metric['standard_confusion']):
-                    y_true_sets = [read_data(path, filename, 'hdf5', set_i, **{'mode':'np'}) for set_i in ['l_train', 'l_val', 'l_test']]
-                    y_pred_sets = [read_data(path, filename, 'hdf5', set_i, **{'mode':'np'}) for set_i in ['p_train', 'p_val', 'p_test']]
+                logging.info(path_result_file)
+                filetype = os.path.splitext(filename)[1][1:]
+                filename = os.path.splitext(filename)[0]
+
+                dict_result = {'file_name': path_result_file}
+                if (('source_confusion' in dict_metric.keys() and dict_metric['source_confusion']) or
+                        ('standard_confusion' in dict_metric.keys() and dict_metric['standard_confusion'])):
+                    if filetype == 'hdf5':
+                        y_true_sets = [read_data(path, filename, filetype, set_i, **
+                                                 {'mode': 'np'}) for set_i in ['l_train', 'l_val', 'l_test']]
+                        y_pred_sets = [read_data(path, filename, filetype, set_i, **
+                                                 {'mode': 'np'}) for set_i in ['p_train', 'p_val', 'p_test']]
+                    elif filetype == 'json':
+                        y_true_sets = [read_data(path, filename, filetype)[set_i]
+                                       for set_i in ['l_train', 'l_val', 'l_test']]
+                        y_pred_sets = [read_data(path, filename, filetype)[set_i]
+                                       for set_i in ['p_train', 'p_val', 'p_test']]
 
                     if 'standard_confusion' in dict_metric.keys() and dict_metric['standard_confusion']:
                         matrix_sets = []  # [set](n_classes, n_classes)
@@ -412,8 +436,9 @@ if __name__ == '__main__':
                             matrix_sets.append(confusion.compute_confusion_matrix())
                         logging.debug('standard_confusion')
                         logging.debug(matrix_sets)
-                        dict_result.update({'standard_confusion':matrix_sets})
-
+                        dict_result.update({'standard_confusion': matrix_sets})
+                        del matrix_sets
+                        gc.collect()
                     if 'source_confusion' in dict_metric.keys() and dict_metric['source_confusion']:
                         matrix_sets = []  # [set][src](n_classes, n_classes)
                         for y_true, y_pred in zip(y_true_sets, y_pred_sets):
@@ -421,46 +446,73 @@ if __name__ == '__main__':
                             matrix_sets.append(source_confusion.compute_source_confusion_matrix(dict_metric['max_src']))
                         logging.debug('source_confusion')
                         logging.debug(matrix_sets)
-                        dict_result.update({'source_confusion':matrix_sets})
+                        dict_result.update({'source_confusion': matrix_sets})
+                        del matrix_sets
+                        gc.collect()
 
                 if 'subset_acc' in dict_metric.keys() and dict_metric['subset_acc']:
                     subset_acc_sets = dict()
                     for set_i in ['train', 'val', 'test']:
-                        subset_acc_sets.update(
-                                {set_i: read_data(path, filename, 'hdf5', f'subset_acc_{self.mode}_{set_i}', **{'mode':'np'})})
+                        if filetype == 'hdf5':
+                            subset_acc_sets.update(
+                                {set_i: read_data(path, filename, filetype, f'subset_acc_{self.mode}_{set_i}',
+                                                  **{'mode': 'np'})})
+                        elif filetype == 'json':
+                            subset_acc_sets.update(
+                                {set_i: read_data(path, filename, filetype)[f'subset_acc_{self.mode}_{set_i}']})
+
                     logging.debug(f'subset_acc_{self.mode}')
                     logging.debug(subset_acc_sets)
-                    dict_result.update({'subset_acc':subset_acc_sets})
-
+                    dict_result.update({'subset_acc': subset_acc_sets})
+                    del subset_acc_sets
+                    gc.collect()
                 if 'binary_acc' in dict_metric.keys() and dict_metric['binary_acc']:
                     subset_acc_sets = dict()
                     for set_i in ['train', 'val', 'test']:
-                        subset_acc_sets.update(
-                                {set_i: read_data(path, filename, 'hdf5', f'binary_acc_{set_i}', **{'mode':'np'})})
+                        if filetype == 'hdf5':
+                            subset_acc_sets.update(
+                                {set_i: read_data(path, filename, filetype, f'binary_acc_{set_i}', **{'mode': 'np'})})
+                        elif filetype == 'json':
+                            subset_acc_sets.update(
+                                {set_i: read_data(path, filename, filetype)[f'binary_acc_{set_i}']})
                     logging.debug(f'subset_acc_{self.mode}')
                     logging.debug(subset_acc_sets)
-                    dict_result.update({'subset_acc':subset_acc_sets})
-
+                    dict_result.update({'subset_acc': subset_acc_sets})
+                    del subset_acc_sets
+                    gc.collect()
                 if 'macro_averaged_acc' in dict_metric.keys() and dict_metric['macro_averaged_acc']:
                     macro_averaged_acc_sets = dict()
                     for set_i in ['train', 'val', 'test']:
-                        macro_averaged_acc_sets.update(
-                                {set_i: read_data(path, filename, 'hdf5', f'macro_averaged_acc_{self.mode}_{set_i}', **{'mode':'np'})})
+                        if filetype == 'hdf5':
+                            macro_averaged_acc_sets.update(
+                                {set_i: read_data(path, filename, filetype, f'macro_averaged_acc_{self.mode}_{set_i}',
+                                                  **{'mode': 'np'})})
+                        elif filetype == 'json':
+                            macro_averaged_acc_sets.update(
+                                {set_i: read_data(path, filename, filetype)[f'macro_averaged_acc_{self.mode}_{set_i}']})
                     logging.debug(f'macro_averaged_acc_{self.mode}')
                     logging.debug(macro_averaged_acc_sets)
-                    dict_result.update({'macro_averaged_acc':macro_averaged_acc_sets})
-
+                    dict_result.update({'macro_averaged_acc': macro_averaged_acc_sets})
+                    del macro_averaged_acc_sets
+                    gc.collect()
                 if 'acc' in dict_metric.keys() and dict_metric['acc']:
                     macro_averaged_acc_sets = dict()
                     for set_i in ['train', 'val', 'test']:
-                        macro_averaged_acc_sets.update(
-                                {set_i: read_data(path, filename, 'hdf5', f'acc_{set_i}', **{'mode':'np'})})
+                        if filetype == 'hdf5':
+                            macro_averaged_acc_sets.update(
+                                {set_i: read_data(path, filename, filetype, f'acc_{set_i}', **{'mode': 'np'})})
+                        elif filetype == 'json':
+                            macro_averaged_acc_sets.update(
+                                {set_i: read_data(path, filename, filetype)[f'acc_{set_i}']})
                     logging.debug(f'macro_averaged_acc_{self.mode}')
                     logging.debug(macro_averaged_acc_sets)
-                    dict_result.update({'macro_averaged_acc':macro_averaged_acc_sets})
-
-                dict_results.update({i:dict_result})
-            logging.debug(dict_results)
+                    dict_result.update({'macro_averaged_acc': macro_averaged_acc_sets})
+                    del macro_averaged_acc_sets
+                    gc.collect()
+                dict_results.update({i: dict_result})
+                del dict_result
+                gc.collect()
+            logging.info(dict_results)
 
             self.path_save = path_save
             f_a = h5py.File(os.path.join(path_save, 'result.hdf5'), 'a')
@@ -505,73 +557,104 @@ if __name__ == '__main__':
                             plt.savefig(file_plot)
                             plt.close()
 
-# =============================================================================
-    PATH_SAVE_ROOT = '../result_recognition_mix_full3'
-# -----------------------------------------------------------------------------
-#    PATH_SAVE_ROOT = '../result_recognition'
-# =============================================================================
-    path_save_result = os.path.join(PATH_SAVE_ROOT, 'result')
-    mkdir(path_save_result)
-# =============================================================================
-#    # only for extract part of the results
-#    path_result_files = []
-#    WIN_LIST = [3164]
-#    HOP_LIST = [ 791]
-#    for win_i, hop_i in zip(WIN_LIST, HOP_LIST):
-#        path_feature = os.path.join(PATH_SAVE_ROOT, f'magspectrum_{win_i}_{hop_i}_or_rand')
-#        path_result_files_feature = walk_result_files(path_feature)
-#        path_result_files += path_result_files_feature
-# -----------------------------------------------------------------------------
-    path_result_files = []
-    path_features = list_dirs(PATH_SAVE_ROOT)
-    for path_feature in path_features:
-        path_result_files_feature = walk_result_files(path_feature)
-        path_result_files += path_result_files_feature
-# =============================================================================
-    see_result_full3 = SeeResult(path_result_files, 'int')
-    dict_metrics = {'source_confusion':True,
-                    'standard_confusion':True,
-                    'subset_acc':True,
-                    'macro_averaged_acc':True,
-                    'max_src':3}
-    see_result_full3.see_metrics(dict_metrics, path_save_result)
-    see_result_full3.confusion_matrix_plot(confusion_name='source_confusion')
-    see_result_full3.confusion_matrix_plot(confusion_name='standard_confusion')
-## -----------------------------------------------------------------------------
-#    see_result = SeeResult(path_result_files, 'nhot')
-##    dict_metrics = {'source_confusion':False,
-##                    'standard_confusion':True,
-##                    'subset_acc':True,
-##                    'macro_averaged_acc':True,
-##                    'max_src':1}
-#    # only for being compatible with old version, which named 'binary_acc' instead of 'subset_acc_nhot'
-#    dict_metrics = {'source_confusion':False,
-#                    'standard_confusion':True,
-#                    'binary_acc':True,
-#                    'acc':True,
-#                    'max_src':1}
-#    see_result.see_metrics(dict_metrics, path_save_result)
-#    see_result.confusion_matrix_plot(confusion_name='standard_confusion')
-# =============================================================================
-    file_result = h5py.File(os.path.join(path_save_result, 'result.hdf5'), 'r')
-# =============================================================================
-    data_names = ['file_name',
-                  'subset_acc',
-                  'macro_averaged_acc']
-    paras = [dict(),
-             {'deep':2, 'kw2':['train', 'val', 'test']},
-             {'deep':3, 'kw2':['train', 'val', 'test']}]
-# -----------------------------------------------------------------------------
-#    data_names = ['file_name',
-#                  'subset_acc',
-#                  'macro_averaged_acc']
-#    paras = [dict(),
-#             {'deep':2, 'kw2':['train', 'val', 'test']},
-#             {'deep':2, 'kw2':['train', 'val', 'test']}]
-# -----------------------------------------------------------------------------
-    file_csv = os.path.join(path_save_result, 'result.csv')
-    save_h5py_to_csv(file_result, file_csv, data_names, paras)
-# =============================================================================
+    from train_single_source_autoencoder_ns import clear_model_weight_file
 
+    def extract_metrics_experiment_one():
+        # PATH_SAVE_ROOT = '../result_recognition'
+        PATH_SAVE_ROOT = '/media/sqg/D/backup/save_result/shipsEar/recognition_mix'
+        # PATH_SAVE_ROOT = '/home/wkj/SQG/save_result/shipsEar/recognition_mix'
+        path_save_result = os.path.join(PATH_SAVE_ROOT, 'result')
+        mkdir(path_save_result)
+
+        # # only for extract part of the results
+        # path_result_files = []
+        # WIN_LIST = [3164]
+        # HOP_LIST = [ 791]
+        # for win_i, hop_i in zip(WIN_LIST, HOP_LIST):
+        #     path_feature = os.path.join(PATH_SAVE_ROOT, f'magspectrum_{win_i}_{hop_i}_or_rand')
+        #     path_result_files_feature = walk_result_files(path_feature)
+        #     path_result_files += path_result_files_feature
+
+        path_result_files = []
+        path_features = list_dirs(PATH_SAVE_ROOT)
+        for path_feature in path_features:
+            # clear_model_weight_file(path_feature)
+            path_result_files_feature = walk_result_files(path_feature, file_type='.json')
+            path_result_files += path_result_files_feature
+
+        see_result = SeeResult(path_result_files, 'nhot')
+        dict_metrics = {'source_confusion': False,
+                        'standard_confusion': True,
+                        'subset_acc': True,
+                        'macro_averaged_acc': True,
+                        'max_src': 1}
+        # only for being compatible with old version, which named 'binary_acc' instead of 'subset_acc_nhot'
+        dict_metrics = {'source_confusion': False,
+                        'standard_confusion': True,
+                        'binary_acc': True,
+                        'acc': True,
+                        'max_src': 1}
+        see_result.see_metrics(dict_metrics, path_save_result)
+        see_result.confusion_matrix_plot(confusion_name='standard_confusion')
+
+        file_result = h5py.File(os.path.join(path_save_result, 'result.hdf5'), 'r')
+
+        data_names = ['file_name',
+                      'subset_acc',
+                      'macro_averaged_acc']
+        paras = [dict(),
+                 {'deep': 2, 'kw2': ['train', 'val', 'test']},
+                 {'deep': 2, 'kw2': ['train', 'val', 'test']}]
+
+        file_csv = os.path.join(path_save_result, 'result.csv')
+        save_h5py_to_csv(file_result, file_csv, data_names, paras)
+
+    def extract_metrics_experiment_two():
+        # PATH_SAVE_ROOT = '../result_recognition_mix_full3'
+        PATH_SAVE_ROOT = '/media/sqg/D/backup/save_result/shipsEar/result_recognition_mix_full3'
+        # PATH_SAVE_ROOT = '/home/wkj/SQG/save_result/shipsEar/recognition_mix_full3'
+        path_save_result = os.path.join(PATH_SAVE_ROOT, 'result')
+        mkdir(path_save_result)
+
+        path_result_files = []
+        path_features = list_dirs(PATH_SAVE_ROOT)
+        for path_feature in path_features:
+            # clear_model_weight_file(path_feature)
+            path_result_files_feature = walk_result_files(path_feature, file_type='.json')
+            path_result_files += path_result_files_feature
+
+        see_result_full3 = SeeResult(path_result_files, 'int')
+        dict_metrics = {'source_confusion': True,
+                        'standard_confusion': False,
+                        'subset_acc': True,
+                        'macro_averaged_acc': True,
+                        'max_src': 3}
+        see_result_full3.see_metrics(dict_metrics, path_save_result)
+        see_result_full3.confusion_matrix_plot(confusion_name='source_confusion')
+        # see_result_full3.confusion_matrix_plot(confusion_name='standard_confusion')
+
+        file_result = h5py.File(os.path.join(path_save_result, 'result.hdf5'), 'r')
+
+        data_names = ['file_name',
+                      'subset_acc',
+                      'macro_averaged_acc']
+        paras = [dict(),
+                 {'deep': 2, 'kw2': ['train', 'val', 'test']},
+                 {'deep': 3, 'kw2': ['train', 'val', 'test']}]
+
+        file_csv = os.path.join(path_save_result, 'result.csv')
+        save_h5py_to_csv(file_result, file_csv, data_names, paras)
+
+    def plot_one_confusion_matrix():
+        file_result_path = '../result_recognition/result'
+        matrix = np.array(read_data(file_result_path, 'result.hdf5', dict_key='0')['standard_confusion'][0])
+        print(f'matrix {matrix}')
+        matrix = matrix / matrix.sum(axis=1, keepdims=True)
+        print(f'matrix {matrix}')
+        ConfusionMatrixDisplay(matrix, list(range(0, 8))).plot()
+        plt.savefig('../testfunction/test_confusionmatrix/test.svg')
+        plt.close()
+
+    extract_metrics_experiment_one()
+    extract_metrics_experiment_two()
     print('finished')
-

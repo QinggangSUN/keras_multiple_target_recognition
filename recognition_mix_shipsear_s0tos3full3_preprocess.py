@@ -5,6 +5,7 @@ Created on Wed Jan  6 20:56:26 2021
 @author: SUN Qinggang
 
 E-mail: sun10qinggang@163.com
+
     First adjust numbers, split to train val test sets,
     secondly mix data s_1_1_2, s_1_1_3, s_2_2_1, s_2_2_3, s_3_3_1, s_3_3_2, s_1_1_1, s_2_2_2, s_3_3_3,
     then compute featues.
@@ -16,6 +17,7 @@ import itertools
 import json
 from prepare_data import Subsets
 from prepare_data import shuffle_sets
+
 
 class SubsetNums(object):
     """Class for split data sets."""
@@ -63,7 +65,8 @@ class SubsetNums(object):
         with open(os.path.join(path_source_root, f'nums_{sub_set_way}.pickle'), 'wb') as f_wb:
             pickle.dump(self.nums_rand, f_wb)
         with open(os.path.join(path_source_root, f'nums_{sub_set_way}.json'), 'w', encoding='utf-8') as f_w:
-            json.dump({'data':self.nums_rand}, f_w)
+            json.dump({'data': self.nums_rand}, f_w)
+
 
 def int_combinations(n_src):
     """Index of combinations of sources.
@@ -85,6 +88,7 @@ def int_combinations(n_src):
     for i in range(1, n_src):
         int_src_list += [comb_j for comb_j in itertools.combinations_with_replacement(int_src, i)]
     return int_src_list
+
 
 def labels_int(combinations_list, n_src):
     """Create labels_int.
@@ -110,6 +114,7 @@ def labels_int(combinations_list, n_src):
     logging.debug(f'labels_arr {labels_arr}')
     return labels_arr
 
+
 def labels_int_short(combinations_list, n_src):
     """Create labels_int.
     Args:
@@ -127,6 +132,7 @@ def labels_int_short(combinations_list, n_src):
     """
     return labels_int(combinations_list, n_src)[:, 1:]
 
+
 def chunks_n_size(lst, n):
     """Yield successive n-sized chunks from lst.
     Args:
@@ -137,6 +143,7 @@ def chunks_n_size(lst, n):
     """
     for i in range(0, len(lst), n):
         yield lst[i:i + n]
+
 
 def chunks_n_set(lst, n):
     """Yield successive n chunks from lst.
@@ -149,6 +156,7 @@ def chunks_n_set(lst, n):
     size_chunk = len(lst)//n
     for i in range(0, len(lst), size_chunk):
         yield lst[i:i + size_chunk]
+
 
 def cycle_move_list(lst, k, right=True):
     """Cyclely move elemnets in list k steps.
@@ -164,6 +172,7 @@ def cycle_move_list(lst, k, right=True):
     else:
         return lst[k:]+lst[:k]
 
+
 def list_transpose(lst):
     """Transpose list first two dimensions.
     Args:
@@ -173,10 +182,11 @@ def list_transpose(lst):
     """
     d_1 = len(lst[0])
     lst_t = [[] for _ in range(d_1)]
-    for lst_i in lst:
+    for i, lst_i in enumerate(lst):
         for j, lst_ij in enumerate(lst_i):
             lst_t[j].append(lst_ij)
     return lst_t
+
 
 def list_reduce_dimension(lst):
     """Merge list first two dimensions to one dimension.
@@ -189,6 +199,7 @@ def list_reduce_dimension(lst):
     for lst_i in lst:
         lst_reduce += lst_i
     return lst_reduce
+
 
 def list_split(lst, nums):
     """Split lst to len(nums) chunks, each longth in nums.
@@ -204,6 +215,7 @@ def list_split(lst, nums):
         lst_s.append(lst[start:start+num_i])
         start += num_i
     return lst_s
+
 
 if __name__ == '__main__':
     import logging
@@ -226,11 +238,12 @@ if __name__ == '__main__':
             nums_subsets (list[list[list[int]]]): [set][src][nsams] index of samples for mix datas.
             n (int): split per source to n sets.
         Returns:
-            nums_chunks (list[list[list[list[int]]]]): [set][src][chunks][nsams] chunks of index of samples for mix datas.
+            nums_chunks (list[list[list[list[int]]]]): [set][src][chunks][nsams] chunks of index of samples
+            for mix datas.
         """
         nums_chunks = []  # [set][src][chunks][samples]
         for nums_i in nums_subsets:  # set i
-            nums_i_chunks = [list(chunks_n_set(nums_i_j, n)) for nums_i_j in nums_i] # src j
+            nums_i_chunks = [list(chunks_n_set(nums_i_j, n)) for nums_i_j in nums_i]  # src j
             nums_chunks.append(nums_i_chunks)
         return nums_chunks
 
@@ -265,8 +278,8 @@ if __name__ == '__main__':
         mix_sources = []
         for k in range(len(nums_src[0])):  # nsams, number of samples per dataset.
             mix_frames_k = []
-            for l, comb_l in enumerate(comb_src):
-                mix_frames_k.append(source_frames[comb_l][nums_src[l][k]])
+            for _l, comb_l in enumerate(comb_src):
+                mix_frames_k.append(source_frames[comb_l][nums_src[_l][k]])
             mix_sources.append(mixaddframes_np(mix_frames_k))
         return mix_sources
 
@@ -309,7 +322,7 @@ if __name__ == '__main__':
                         nums_set_i_src_chunks = list(chunks_n_set(nums_set_i[comb_l], (n_src-1)*2))
                         if comb_l not in time_src.keys():
                             nums_src_i.append(nums_set_i_src_chunks)
-                            time_src.update({comb_l:0})
+                            time_src.update({comb_l: 0})
                         else:
                             time_n = time_src[comb_l]+1
                             nums_src_i.append(cycle_move_list(nums_set_i_src_chunks, time_n*2, False))
@@ -393,7 +406,7 @@ if __name__ == '__main__':
             source_frames = np.asarray(
                 read_datas(
                     os.path.join(path_source_root, 's_hdf5'),
-                    dir_names, **{'mode':kwargs['mode_read']}), dtype=np.float32)
+                    dir_names, **{'mode': kwargs['mode_read']}), dtype=np.float32)
         else:
             source_frames = np.asarray(
                 read_datas(os.path.join(path_source_root, 's_hdf5'), dir_names), dtype=np.float32)
@@ -415,7 +428,7 @@ if __name__ == '__main__':
         x_sets, y_sets = x_y_sets_create(x_mix_sources, combinations_list, n_src)
 
         if scaler_data == 'mm':
-           x_sets = x_sets_mm_create(x_sets)
+            x_sets = x_sets_mm_create(x_sets)
 
         mkdir(path_source)
         save_datas(dict(zip(['X_train', 'X_val', 'X_test'], x_sets)), path_source)
@@ -437,11 +450,11 @@ if __name__ == '__main__':
         y_filetype = '.hdf5' if 'y_filetype' not in kwargs.keys() else kwargs['y_filetype']
         for y_filename_i in y_filenames:
             mycopyfile(os.path.join(path_source_in, y_filename_i+y_filetype),
-                        os.path.join(path_source_out, y_filename_i+y_filetype))
+                       os.path.join(path_source_out, y_filename_i+y_filetype))
 
         x_filenames = ['X_train', 'X_val', 'X_test'] if 'x_filenames' not in kwargs.keys() else kwargs['x_filenames']
         if 'mode_read' in kwargs.keys():
-            sources_wavmat = read_datas(path_source_in, x_filenames, **{'mode':kwargs['mode_read']})
+            sources_wavmat = read_datas(path_source_in, x_filenames, **{'mode': kwargs['mode_read']})
         else:
             sources_wavmat = read_datas(path_source_in, x_filenames)
 
@@ -452,11 +465,11 @@ if __name__ == '__main__':
             for source_i in sources_wavmat:
                 source_frames.append(feature_extract(
                     feature, **{
-                        'source':source_i.reshape(-1, ),
-                        'window':window,
-                        'win_length':win_length, 'hop_length':hop_length,
-                        'n_fft':win_length, 'center':False,
-                        'dtype':np.complex64, 'fix_length':fix_length}))  # 2D to 3D
+                        'source': source_i.reshape(-1, ),
+                        'window': window,
+                        'win_length': win_length, 'hop_length': hop_length,
+                        'n_fft': win_length, 'center': False,
+                        'dtype': np.complex64, 'fix_length': fix_length}))  # 2D to 3D
             return np.asarray(source_frames, dtype=np.float32)
 
         def magspectrum_create(sources_wavmat, win_length, hop_length, fix_length=False, window='hamming'):
@@ -487,16 +500,16 @@ if __name__ == '__main__':
                 for source_i in sources:
                     source_frames.append(feature_extract(
                         'logmelspectrum', **{
-                            'source':source_i.reshape(-1, ),
-                            'sr':sr, 'n_mels':n_mels, 'window':window,
-                            'win_length':win_length, 'hop_length':hop_length,
-                            'n_fft':win_length, 'center':False, 'dtype':np.float32}))  # 2D to 3D
+                            'source': source_i.reshape(-1, ),
+                            'sr': sr, 'n_mels': n_mels, 'window': window,
+                            'win_length': win_length, 'hop_length': hop_length,
+                            'n_fft': win_length, 'center': False, 'dtype': np.float32}))  # 2D to 3D
             elif mode == 1:  # input stft spectrum
                 for source_i in sources:
                     source_frames.append(feature_extract(
                         'logmelspectrum', **{
-                            'S':source_i.transpose()**2,
-                            'sr':sr, 'n_mels':n_mels}))  # 2D to 3D
+                            'S': source_i.transpose()**2,
+                            'sr': sr, 'n_mels': n_mels}))  # 2D to 3D
             return np.asarray(source_frames, dtype=np.float32)
 
         def mfcc_create(sources, sr, n_mfcc,
@@ -509,18 +522,18 @@ if __name__ == '__main__':
                 for source_i in sources:
                     source_frames.append(feature_extract(
                         'mfcc', **{
-                            'source':source_i.reshape(-1, ), 'sr':sr, 'n_mfcc':n_mfcc,
-                            'n_fft':win_length, 'hop_length':hop_length, 'win_length':win_length,
-                            'window':window, 'center':False,
-                            'n_mels':n_mels, 'dtype':np.float32
-                            }))  # 2D to 3D
+                            'source': source_i.reshape(-1, ), 'sr': sr, 'n_mfcc': n_mfcc,
+                            'n_fft': win_length, 'hop_length': hop_length, 'win_length': win_length,
+                            'window': window, 'center': False,
+                            'n_mels': n_mels, 'dtype': np.float32
+                        }))  # 2D to 3D
             elif mode == 1:  # input log-power Mel spectrogram
                 for source_i in sources:
                     source_frames.append(feature_extract(
                         'mfcc', **{
-                            'source':None, 'S':librosa.power_to_db(source_i.transpose()),
-                            'sr':sr, 'n_mfcc':n_mfcc
-                            }))  # 2D to 3D
+                            'source': None, 'S': librosa.power_to_db(source_i.transpose()),
+                            'sr': sr, 'n_mfcc': n_mfcc
+                        }))  # 2D to 3D
             return np.asarray(source_frames, dtype=np.float32)
 
         def demon_create(sources, high=30000, low=20000, cutoff=1000.0, fs=200000, mode='square_law'):
@@ -530,8 +543,8 @@ if __name__ == '__main__':
             for source_i in sources:
                 source_frames.append(feature_extract(
                     'demon', **{
-                        'source':source_i, 'high':high, 'low':low, 'cutoff':cutoff, 'fs':fs, 'mode':mode
-                        }))  # 2D to 3D
+                        'source': source_i, 'high': high, 'low': low, 'cutoff': cutoff, 'fs': fs, 'mode': mode
+                    }))  # 2D to 3D
             return np.asarray(source_frames, dtype=np.float32)
 
         def feature_create(sources, path_class_out, form_src, **kwargs):
@@ -600,7 +613,7 @@ if __name__ == '__main__':
 
                     source_frames_i_j = feature_create(sources_i_j, path_class_out, form_src, **kwargs)
                     save_datas(dict(zip([x_filenames[set_i]], [source_frames_i_j])),
-                                path_source_out, mode_batch=mode_batch)
+                               path_source_out, mode_batch=mode_batch)
 # ==================================================================================================
     PATH_ROOT = '/home/sqg/data/shipsEar/mix_recognition'
 
@@ -610,14 +623,14 @@ if __name__ == '__main__':
 # ---------------------------------------------------------------------------------------------------
     # for feature original sample points
     RATES_SET = [0.6, 0.2, 0.2]  # rates of train, val, test set
-    data_mixwav_create(PATH_CLASS, RATES_SET, **{'test_few':True})
+    data_mixwav_create(PATH_CLASS, RATES_SET, **{'test_few': True})
 # ---------------------------------------------------------------------------------------------------
     SUB_SET_WAY = PATH_CLASS.sub_set_way
     SCALER_DATA = PATH_CLASS.get_scaler_data()
     SR = get_sr()
 # ---------------------------------------------------------------------------------------------------
     WIN_LIST = [264, 528, 1056, 1582, 2110, 2638, 3164, 10547]
-    HOP_LIST = [ 66, 132,  264,  396,  527,  659,  791, 10547]
+    HOP_LIST = [66, 132,  264,  396,  527,  659,  791, 10547]
 
     N_MELS = [512, 256, 128]
 
@@ -628,26 +641,26 @@ if __name__ == '__main__':
         path_class_out = PathSourceRootFull(
             PATH_ROOT, form_src='magspectrum', win_length=win_i, hop_length=hop_i,
             scaler_data=SCALER_DATA, sub_set_way=SUB_SET_WAY)
-        data_feature_create(path_class_in, path_class_out, batch_save=0,  # batch_save=200, 0; 'mode_save':'batch_h5py'
-                            **{'fix_length':True, 'window':'hann'})  # , **{'mode_read':'pytables'}
+        data_feature_create(path_class_in, path_class_out, batch_save=0,  # batch_save=200, 'mode_save':'batch_h5py'
+                            **{'fix_length': True, 'window': 'hann'})  # , **{'mode_read':'pytables'}
 
         path_class_out = PathSourceRootFull(
             PATH_ROOT, form_src='angspectrum', win_length=win_i, hop_length=hop_i,
             scaler_data=SCALER_DATA, sub_set_way=SUB_SET_WAY)
-        data_feature_create(path_class_in, path_class_out, batch_save=0,  # batch_save=200, 0; 'mode_save':'batch_h5py'
-                            **{'fix_length':True, 'window':'hann'})  # , **{'mode_read':'pytables'}
+        data_feature_create(path_class_in, path_class_out, batch_save=0,  # batch_save=200, 'mode_save':'batch_h5py'
+                            **{'fix_length': True, 'window': 'hann'})  # , **{'mode_read':'pytables'}
 
         path_class_out = PathSourceRootFull(
             PATH_ROOT, form_src='realspectrum', win_length=win_i, hop_length=hop_i,
             scaler_data=SCALER_DATA, sub_set_way=SUB_SET_WAY)
-        data_feature_create(path_class_in, path_class_out, batch_save=0,  # batch_save=200, 0; 'mode_save':'batch_h5py'
-                            **{'fix_length':True, 'window':'hann'})  # , **{'mode_read':'pytables'}
+        data_feature_create(path_class_in, path_class_out, batch_save=0,  # batch_save=200, 'mode_save':'batch_h5py'
+                            **{'fix_length': True, 'window': 'hann'})  # , **{'mode_read':'pytables'}
 
         path_class_out = PathSourceRootFull(
             PATH_ROOT, form_src='imgspectrum', win_length=win_i, hop_length=hop_i,
             scaler_data=SCALER_DATA, sub_set_way=SUB_SET_WAY)
-        data_feature_create(path_class_in, path_class_out, batch_save=0,  # batch_save=200, 0; 'mode_save':'batch_h5py'
-                            **{'fix_length':True, 'window':'hann'})  # , **{'mode_read':'pytables'}
+        data_feature_create(path_class_in, path_class_out, batch_save=0,  # batch_save=200, 'mode_save':'batch_h5py'
+                            **{'fix_length': True, 'window': 'hann'})  # , **{'mode_read':'pytables'}
 
         for n_mels_i in N_MELS:
             # Create logmelspectrum feature from wav.
@@ -655,8 +668,8 @@ if __name__ == '__main__':
             path_class_out = PathSourceRootFull(
                 PATH_ROOT, form_src='logmelspectrum', win_length=win_i, hop_length=hop_i, n_mels=n_mels_i,
                 scaler_data=SCALER_DATA, sub_set_way=SUB_SET_WAY)
-            data_feature_create(path_class_in, path_class_out, batch_save=0,  # batch_save=200, 0; 'mode_save':'batch_h5py'
-                                **{'sr':SR, 'n_mels':n_mels_i, 'window':'hann'})  # , **{'mode_read':'pytables'}
+            data_feature_create(path_class_in, path_class_out, batch_save=0,  # batch_save=200, 'mode_save':'batch_h5py'
+                                **{'sr': SR, 'n_mels': n_mels_i, 'window': 'hann'})  # , **{'mode_read':'pytables'}
 
             # Create logmelspectrum feature from magspectrum.
             path_class_in = PathSourceRootFull(
@@ -665,8 +678,8 @@ if __name__ == '__main__':
             path_class_out = PathSourceRootFull(
                 PATH_ROOT, form_src='logmelspectrum', win_length=win_i, hop_length=hop_i, n_mels=n_mels_i,
                 scaler_data=SCALER_DATA, sub_set_way=SUB_SET_WAY)
-            data_feature_create(path_class_in, path_class_out, batch_save=0,  # batch_save=200, 0; 'mode_save':'batch_h5py'
-                                **{'mode':1, 'sr':SR, 'n_mels':n_mels_i})  # , **{'mode_read':'pytables'}
+            data_feature_create(path_class_in, path_class_out, batch_save=0,  # batch_save=200, 'mode_save':'batch_h5py'
+                                **{'mode': 1, 'sr': SR, 'n_mels': n_mels_i})  # , **{'mode_read':'pytables'}
 
             for n_mfcc_i in N_MFCC:
                 # Create mfcc feature from wav.
@@ -674,9 +687,9 @@ if __name__ == '__main__':
                 path_class_out = PathSourceRootFull(
                     PATH_ROOT, form_src='mfcc', win_length=win_i, hop_length=hop_i, n_mels=n_mels_i, n_mfcc=n_mfcc_i,
                     scaler_data=SCALER_DATA, sub_set_way=SUB_SET_WAY)
-                data_feature_create(PATH_CLASS, path_class_out, batch_save=0,  # batch_save=200, 0; 'mode_save':'batch_h5py'
-                                    **{'sr':SR, 'n_mfcc':n_mfcc_i,
-                                        'n_mels':n_mels_i, 'window':'hann'})  # , **{'mode_read':'pytables'}
+                data_feature_create(PATH_CLASS, path_class_out, batch_save=0,  # batch_save=200, 'mode_save':'batch_h5py'
+                                    **{'sr': SR, 'n_mfcc': n_mfcc_i,
+                                        'n_mels': n_mels_i, 'window': 'hann'})  # , **{'mode_read':'pytables'}
 
                 # Create mfcc feature from logmelspectrum.
                 path_class_in = PathSourceRootFull(
@@ -685,9 +698,9 @@ if __name__ == '__main__':
                 path_class_out = PathSourceRootFull(
                     PATH_ROOT, form_src='mfcc', win_length=win_i, hop_length=hop_i, n_mels=n_mels_i, n_mfcc=n_mfcc_i,
                     scaler_data=SCALER_DATA, sub_set_way=SUB_SET_WAY)
-                data_feature_create(PATH_CLASS, path_class_out, batch_save=0,  # batch_save=200, 0; 'mode_save':'batch_h5py'
-                                    **{'sr':SR, 'n_mfcc':n_mfcc_i,
-                                        'n_mels':n_mels_i, 'window':'hann'})  # , **{'mode_read':'pytables'}
+                data_feature_create(PATH_CLASS, path_class_out, batch_save=0,  # batch_save=200, 'mode_save':'batch_h5py'
+                                    **{'sr': SR, 'n_mfcc': n_mfcc_i,
+                                        'n_mels': n_mels_i, 'window': 'hann'})  # , **{'mode_read':'pytables'}
 # ---------------------------------------------------------------------------------------------------
     # Create DEMON feature.
     HIGH_LIST = [7910.1]
@@ -699,9 +712,9 @@ if __name__ == '__main__':
             path_class_out = PathSourceRootFull(
                 PATH_ROOT, form_src='demon',
                 scaler_data=SCALER_DATA, sub_set_way=SUB_SET_WAY,
-                **{'high':high_i, 'low':low_i, 'cutoff':cutoff_i})
-            data_feature_create(PATH_CLASS, path_class_out, batch_save=0,  # batch_save=200, 0; 'mode_save':'batch_h5py'
-                                **{'high':high_i, 'low':low_i, 'cutoff':cutoff_i,
-                                    'fs':SR, 'mode':'square_law'})  # , **{'mode_read':'pytables'}
+                **{'high': high_i, 'low': low_i, 'cutoff': cutoff_i})
+            data_feature_create(PATH_CLASS, path_class_out, batch_save=0,  # batch_save=200, 'mode_save':'batch_h5py'
+                                **{'high': high_i, 'low': low_i, 'cutoff': cutoff_i,
+                                    'fs': SR, 'mode': 'square_law'})  # , **{'mode_read':'pytables'}
 
     logging.info('data preprocessing finished')

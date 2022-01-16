@@ -42,10 +42,6 @@ class ResNet1D(keras.Model):
 
     :param output_activation: int, activation of the output Dense layer of the classifer
 
-    :param dropout_fc : float, (optional), dropout rate of dense layer, defaults to None
-
-    :param parameters: parameters for conv layers in blocks
-
     :return model: ResNet model with encoding output (if `include_top=False`) or classification
         output (if `include_top=True`)
 
@@ -75,8 +71,6 @@ class ResNet1D(keras.Model):
                  classes=1000,
                  numerical_names=None,
                  output_activation=None,
-                 dropout_fc=None,
-                 parameters=None,
                  *args,
                  **kwargs
                 ):
@@ -88,7 +82,7 @@ class ResNet1D(keras.Model):
         x = keras.layers.ZeroPadding1D(padding=3, name="padding_conv1")(inputs)
 
         x_complex = ComplexConv1D(n_filters, 7, strides=2, padding='same', use_bias=False,
-                                  spectral_parametrization=False, name='conv1', **parameters)(inputs)
+                                  spectral_parametrization=False, name='conv1')(inputs)
 
         x_complex = ComplexBatchNormalization(axis=axis, epsilon=1e-5, name='bn_conv1')(x_complex)
 
@@ -108,8 +102,7 @@ class ResNet1D(keras.Model):
                     stage_id,
                     block_id,
                     numerical_name=(block_id > 0 and numerical_names[stage_id]),
-                    activation=activation,
-                    **parameters
+                    activation=activation
                 )(x_complex)
 
             n_filters *= 2
@@ -139,9 +132,6 @@ class ResNet1D(keras.Model):
             else:
                 x = keras.layers.Dense(classes, activation=output_activation, name=f'fc{classes}')(x_complex)
 
-            if dropout_fc:
-                x = keras.layers.Dropout(dropout_fc)(x)
-
             super(ResNet1D, self).__init__(inputs=inputs, outputs=x, *args, **kwargs)
         else:
             # Else output each stages features
@@ -168,10 +158,6 @@ class ResNet1D18(ResNet1D):
     :param classes: int, number of classes to classify (include_top must be true)
 
     :param output_activation: int, activation of the output Dense layer of the classifer
-
-    :param dropout_fc : float, (optional), dropout rate of dense layer, defaults to None
-
-    :param parameters: parameters for conv layers in blocks
 
     :return model: ResNet model with encoding output (if `include_top=False`) or classification
         output (if `include_top=True`)
@@ -200,8 +186,6 @@ class ResNet1D18(ResNet1D):
                  classes=1000,
                  numerical_names=None,
                  output_activation='sigmoid',
-                 dropout_fc=None,
-                 parameters=None,
                  *args,
                  **kwargs
                 ):
@@ -220,8 +204,6 @@ class ResNet1D18(ResNet1D):
             classes,
             numerical_names,
             output_activation,
-            dropout_fc,
-            parameters,
             *args,
             **kwargs
         )
@@ -247,10 +229,6 @@ class ResNet1D34(ResNet1D):
     :param classes: int, number of classes to classify (include_top must be true)
 
     :param output_activation: int, activation of the output Dense layer of the classifer
-
-    :param dropout_fc : float, (optional), dropout rate of dense layer, defaults to None
-
-    :param parameters: parameters for conv layers in blocks
 
     :return model: ResNet model with encoding output (if `include_top=False`) or classification
         output (if `include_top=True`)
@@ -279,8 +257,6 @@ class ResNet1D34(ResNet1D):
                  classes=1000,
                  numerical_names=None,
                  output_activation='sigmoid',
-                 dropout_fc=None,
-                 parameters=None,
                  *args,
                  **kwargs
                 ):
@@ -299,8 +275,6 @@ class ResNet1D34(ResNet1D):
             classes,
             numerical_names,
             output_activation,
-            dropout_fc,
-            parameters,
             *args,
             **kwargs
         )
@@ -326,10 +300,6 @@ class ResNet1D50(ResNet1D):
     :param classes: int, number of classes to classify (include_top must be true)
 
     :param output_activation: int, activation of the output Dense layer of the classifer
-
-    :param dropout_fc : float, (optional), dropout rate of dense layer, defaults to None
-
-    :param parameters: parameters for conv layers in blocks
 
     :return model: ResNet model with encoding output (if `include_top=False`) or classification
         output (if `include_top=True`)
@@ -358,8 +328,6 @@ class ResNet1D50(ResNet1D):
                  classes=1000,
                  numerical_names=None,
                  output_activation='sigmoid',
-                 dropout_fc=None,
-                 parameters=None,
                  *args,
                  **kwargs
                 ):
@@ -380,8 +348,6 @@ class ResNet1D50(ResNet1D):
             classes,
             numerical_names,
             output_activation,
-            dropout_fc,
-            parameters,
             *args,
             **kwargs
         )
@@ -408,10 +374,6 @@ class ResNet1D101(ResNet1D):
 
     :param output_activation: int, activation of the output Dense layer of the classifer
 
-    :param dropout_fc : float, (optional), dropout rate of dense layer, defaults to None
-
-    :param parameters: parameters for conv layers in blocks
-
     :return model: ResNet model with encoding output (if `include_top=False`) or classification
         output (if `include_top=True`)
 
@@ -428,22 +390,20 @@ class ResNet1D101(ResNet1D):
     """
 
 
-    def __init__(self,
-                 inputs,
-                 num_blocks=None,
-                 block_func=bottleneck_1d,
-                 conv_activation='crelu',
-                 n_filters=64,
-                 pooling_func=['max', 'global_average'],
-                 include_top=True,
-                 classes=1000,
-                 numerical_names=None,
-                 output_activation='sigmoid',
-				 dropout_fc=None,
-                 parameters=None,
-                 *args,
-                 **kwargs
-                ):
+    def __init__(
+            self,
+            inputs,
+            num_blocks=None,
+            block_func=bottleneck_1d,
+            conv_activation='crelu',
+            n_filters=64,
+            pooling_func=['max', 'global_average'],
+            include_top=True,
+            classes=1000,
+            numerical_names=None,
+            output_activation='sigmoid',
+            *args,
+            **kwargs):
 
         if num_blocks is None:
             num_blocks = [3, 4, 23, 3]
@@ -461,8 +421,6 @@ class ResNet1D101(ResNet1D):
             classes,
             numerical_names,
             output_activation,
-            dropout_fc,
-            parameters,
             *args,
             **kwargs
         )
@@ -489,10 +447,6 @@ class ResNet1D152(ResNet1D):
 
     :param output_activation: int, activation of the output Dense layer of the classifer
 
-    :param dropout_fc : float, (optional), dropout rate of dense layer, defaults to None
-
-    :param parameters: parameters for conv layers in blocks
-
     :return model: ResNet model with encoding output (if `include_top=False`) or classification
         output (if `include_top=True`)
 
@@ -509,22 +463,20 @@ class ResNet1D152(ResNet1D):
     """
 
 
-    def __init__(self,
-                 inputs,
-                 num_blocks=None,
-                 block_func=bottleneck_1d,
-                 conv_activation='crelu',
-                 n_filters=64,
-                 pooling_func=['max', 'global_average'],
-                 include_top=True,
-                 classes=1000,
-                 numerical_names=None,
-                 output_activation='sigmoid',
-				 dropout_fc=None,
-                 parameters=None,
-                 *args,
-                 **kwargs
-                ):
+    def __init__(
+            self,
+            inputs,
+            num_blocks=None,
+            block_func=bottleneck_1d,
+            conv_activation='crelu',
+            n_filters=64,
+            pooling_func=['max', 'global_average'],
+            include_top=True,
+            classes=1000,
+            numerical_names=None,
+            output_activation='sigmoid',
+            *args,
+            **kwargs):
 
         if num_blocks is None:
             num_blocks = [3, 8, 36, 3]
@@ -542,8 +494,6 @@ class ResNet1D152(ResNet1D):
             classes,
             numerical_names,
             output_activation,
-            dropout_fc,
-            parameters,
             *args,
             **kwargs
         )
@@ -570,10 +520,6 @@ class ResNet1D200(ResNet1D):
 
     :param output_activation: int, activation of the output Dense layer of the classifer
 
-    :param dropout_fc : float, (optional), dropout rate of dense layer, defaults to None
-
-    :param parameters: parameters for conv layers in blocks
-
     :return model: ResNet model with encoding output (if `include_top=False`) or classification
         output (if `include_top=True`)
 
@@ -590,21 +536,20 @@ class ResNet1D200(ResNet1D):
     """
 
 
-    def __init__(self,
-                 inputs,
-                 num_blocks=None,
-                 block_func=bottleneck_1d,
-                 conv_activation='crelu',
-                 n_filters=64,
-                 pooling_func=['max', 'global_average'],
-                 include_top=True,
-                 classes=1000,
-                 numerical_names=None,
-                 output_activation='sigmoid',
-            	 dropout_fc=None,
-                 parameters=None,
-                 *args,
-                 **kwargs):
+    def __init__(
+            self,
+            inputs,
+            num_blocks=None,
+            block_func=bottleneck_1d,
+            conv_activation='crelu',
+            n_filters=64,
+            pooling_func=['max', 'global_average'],
+            include_top=True,
+            classes=1000,
+            numerical_names=None,
+            output_activation='sigmoid',
+            *args,
+            **kwargs):
 
         if num_blocks is None:
             num_blocks = [3, 24, 36, 3]
@@ -622,8 +567,6 @@ class ResNet1D200(ResNet1D):
             classes,
             numerical_names,
             output_activation,
-            dropout_fc,
-            parameters,
             *args,
             **kwargs
         )

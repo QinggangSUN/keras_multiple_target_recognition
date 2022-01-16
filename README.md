@@ -4,6 +4,8 @@ ResNet, DenseNet, and Complex-Valued convolutional nerual networks.
 keras-gpu 2.2.4 with tensorflow-gpu 1.12.0 backend.
 
 #  How to use
+download and organize data files as data_dir_tree.md
+install modified package ./models/resnet_broadinstitute
 Experiment one:
     Eight class recognition.
     run prepare_data_shipsear_recognition_mix_s0tos3.py
@@ -49,6 +51,8 @@ author    = {Dramsch, Jesper S{\"o}ren and Contributors},
 [Dense Net in Keras](https://github.com/titu1994/DenseNet)
 
 [densenet_1d](https://github.com/ankitvgupta/densenet_1d)
+
+[Demystifying Convolutional Neural Networks using GradCam](https://towardsdatascience.com/demystifying-convolutional-neural-networks-using-gradcam-554a85dd4e48)
 
 #  Related works
 [Deep Complex Networks (ICLR 2018)](https://arxiv.org/abs/1705.09792)  

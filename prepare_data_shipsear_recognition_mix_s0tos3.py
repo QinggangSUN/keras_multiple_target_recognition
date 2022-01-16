@@ -10,8 +10,6 @@ E-mail: sun10qinggang@163.com
 # pylint: disable=no-member
 import logging
 import os
-
-
 from error import Error, ParameterError
 
 _SR = 52734
@@ -215,7 +213,8 @@ class PathSourceRoot(object):  # pylint: disable=too-many-instance-attributes
                 'Has to create _form_src by __init__ or _set_path_source')
 
         if self._form_src == 'wav':
-            self._path_source_root = os.path.join(self._get_path_mix_root(), 'wavmat')  # pylint: disable=attribute-defined-outside-init
+            self._path_source_root = os.path.join(self._get_path_mix_root(
+            ), 'wavmat')  # pylint: disable=attribute-defined-outside-init
         elif self._form_src in {'magspectrum', 'angspectrum', 'realspectrum', 'imgspectrum'}:
             if not hasattr(self, '_win_length'):
                 self._win_length = get_win_length()
@@ -336,9 +335,9 @@ class PathSourceRoot(object):  # pylint: disable=too-many-instance-attributes
                 'Has to create sub_set_way by __init__ or _set_path_source')
 
         if self._scaler_data == 'mm':
-            self._path_source =  os.path.join(self._path_source_root, 'min_max_scaler_'+self.sub_set_way)
+            self._path_source = os.path.join(self._path_source_root, 'min_max_scaler_'+self.sub_set_way)
         elif self._scaler_data == 'or':
-            self._path_source =  os.path.join(self._path_source_root, 'original_'+self.sub_set_way)
+            self._path_source = os.path.join(self._path_source_root, 'original_'+self.sub_set_way)
         else:
             raise ParameterError('scaler_data invaild')
 
@@ -414,6 +413,7 @@ class PathSourceRoot(object):  # pylint: disable=too-many-instance-attributes
         """Get read-only _form_src."""
         return self._form_src
 
+
 def read_source(path, file_names, form_src='hdf5', data_type=None):
     """Read data file_names [file_names] from [path]."""
     import json
@@ -449,28 +449,29 @@ def read_source(path, file_names, form_src='hdf5', data_type=None):
             logging.warning('ignore data_type')
         file_names = str_remove_end(file_names, form_src)
         source_frames = [
-            h5py.File(os.path.join(path, f'{name_i.rstrip()}.{form_src}'), 'r')['data'] for name_i in file_names]
+            h5py.File(os.path.join(path, name_i.rstrip()+'.'+form_src), 'r')['data'] for name_i in file_names]
     elif form_src == 'bin':
         if data_type is None:
             data_type = np.float32
         source_frames = [np.fromfile(
-            os.path.join(path, f'{name_i.rstrip()}.{form_src}'), dtype=data_type).reshape(
+            os.path.join(path, name_i.rstrip()+'.'+form_src), dtype=data_type).reshape(
                 np.load(os.path.join(path, name_i.rstrip()+'_shape.npy'))) for name_i in file_names]
     elif form_src == 'mat':
         if data_type:
             logging.warning('ignore data_type')
         file_names = str_remove_end(file_names, form_src)
         source_frames = [sio.loadmat(
-            os.path.join(path, f'{name_i.rstrip()}.{form_src}'))['data'] for name_i in file_names]
+            os.path.join(path, name_i.rstrip()+'.'+form_src))['data'] for name_i in file_names]
     elif form_src == 'json':
         if data_type:
             logging.warning('ignore data_type')
         source_frames = [json.load(
-            open(os.path.join(path, f'{name_i.rstrip()}.{form_src}'), 'r')) for name_i in file_names]
+            open(os.path.join(path, name_i.rstrip()+'.'+form_src), 'r')) for name_i in file_names]
     else:
         raise ParameterError('Invalid form_src keyword.')
 
     return source_frames  # return 3D np.array [source][num][feature]
+
 
 def read_data(path, file_name, form_src='hdf5', dict_key='data', data_type=None, **kwargs):
     """Read data file_name from path.
@@ -513,22 +514,18 @@ def read_data(path, file_name, form_src='hdf5', dict_key='data', data_type=None,
             logging.warning('ignore data_type')
         file_name = str_remove_end(file_name, form_src)
         if 'mode' not in kwargs.keys():
-            data = h5py.File(os.path.join(path, f'{file_name.rstrip()}.{form_src}'), 'r')[dict_key]
+            data = h5py.File(os.path.join(path, file_name.rstrip()+'.'+form_src), 'r')[dict_key]
         else:
             if kwargs['mode'] == 'pytables':
-                with tables.open_file(os.path.join(path, f'{file_name.rstrip()}.{form_src}')) as f_r:
-                    data = f_r[dict_key]
-            elif kwargs['mode'] == 'np':
-                with h5py.File(os.path.join(path, f'{file_name.rstrip()}.{form_src}'), 'r') as f_r:
-                    data = np.asarray(f_r[dict_key])
+                data = tables.open_file(os.path.join(path, file_name.rstrip()+'.'+form_src))[dict_key]
             else:
                 raise ParameterError('Invalid read_data mode.')
     elif form_src == 'bin':
         if data_type is None:
             data_type = np.float32
         data = np.fromfile(
-            os.path.join(path, f'{file_name.rstrip()}.{form_src}'), dtype=data_type).reshape(
-                np.load(os.path.join(path, f'{file_name.rstrip()}_shape.npy')))
+            os.path.join(path, file_name.rstrip()+'.'+form_src), dtype=data_type).reshape(
+                np.load(os.path.join(path, file_name.rstrip()+'_shape.npy')))
     elif form_src == 'mat':
         if data_type:
             logging.warning('ignore data_type')
@@ -542,6 +539,7 @@ def read_data(path, file_name, form_src='hdf5', dict_key='data', data_type=None,
         raise ParameterError('Invalid form_src keyword.')
 
     return data
+
 
 def read_datas(path, file_names, form_src='hdf5', dict_key='data', data_type=None, **kwargs):
     """Read data file_names [file_names] from [path].
@@ -558,6 +556,7 @@ def read_datas(path, file_names, form_src='hdf5', dict_key='data', data_type=Non
     datas = [read_data(path, file_name, form_src, dict_key, data_type, **kwargs) for file_name in file_names]
 
     return datas
+
 
 def data_save_reshape(data):
     """Reshape data to last dim is not 1.
@@ -577,6 +576,7 @@ def data_save_reshape(data):
             data = data.transpose(
                 tuple(range(last_one))+tuple(range(last_one+1, data.ndim))+(last_one, ))
     return data
+
 
 def save_datas(set_dict, path_save, **kwargs):
     """Save data dict set_dict[key] to [path_save] using file name [key].
@@ -633,10 +633,10 @@ def save_datas(set_dict, path_save, **kwargs):
                 with tables.open_file(file_name_i, 'a') as f_w:
                     if save_key not in f_w.root:
                         data_earray = f_w.create_earray(f_w.root, save_key,
-                            tables.Atom.from_dtype(dtype),
-                            ((0,)+data_i.shape[1:]),
-                            chunkshape=(data_i.ndim-1)*(1,)+data_i.shape[-1:],
-                            filters=filters)
+                                                        tables.Atom.from_dtype(dtype),
+                                                        ((0,)+data_i.shape[1:]),
+                                                        chunkshape=(data_i.ndim-1)*(1,)+data_i.shape[-1:],
+                                                        filters=filters)
                     else:
                         data_earray = getattr(f_w.root, save_key)
                     data_earray.append(data_i)
@@ -653,7 +653,7 @@ def save_datas(set_dict, path_save, **kwargs):
                 else:
                     with h5py.File(file_name_i, 'a') as f_a:
                         f_a[save_key].resize((f_a[save_key].shape[0]+data_i.shape[0]), axis=0)
-                        f_a[save_key][-data_i.shape[0] :] = data_i
+                        f_a[save_key][-data_i.shape[0]:] = data_i
         elif mode_batch == 'one_file_no_chunk':
             full_file_name = os.path.join(path_save, file_name+'.hdf5')
             with h5py.File(full_file_name, 'a') as f_a:
@@ -663,27 +663,29 @@ def save_datas(set_dict, path_save, **kwargs):
             raise ParameterError('Invalid mode_batch keyword.')
     elif form_save == 'mat':
         for name_i, data_i in set_dict.items():
-            sio.savemat(os.path.join(path_save, name_i+'.mat'), {save_key2:data_i})
+            sio.savemat(os.path.join(path_save, name_i+'.mat'), {save_key2: data_i})
     elif form_save == 'npy':
         for name_i, data_i in set_dict.items():
-            np.save(os.path.join(path_save, name_i+'.npy'), {save_key2:data_i})
+            np.save(os.path.join(path_save, name_i+'.npy'), {save_key2: data_i})
     elif form_save == 'picke':
         for name_i, data_i in set_dict.items():
             with open(os.path.join(path_save, name_i+'.pickle'), 'wb') as f_wb:
-                pickle.dump({save_key2:data_i}, f_wb)
+                pickle.dump({save_key2: data_i}, f_wb)
     elif form_save == 'bin':
         for name_i, data_i in set_dict.items():
             data_i.tofile(os.path.join(path_save, name_i+'.bin'))
             np.save(os.path.join(path_save, name_i+'_shape.npy'), data_i.shape)
             with open(os.path.join(path_save, name_i+'_shape.json'), 'w', encoding='utf-8') as f_w:
-                json.dump({save_key:data_i.shape}, f_w)
+                json.dump({save_key: data_i.shape}, f_w)
     elif form_save == 'json':
         with open(os.path.join(path_save, file_name+'.json'), 'w', encoding='utf-8') as f_w:
             json.dump(set_dict, f_w)
     else:
         raise ParameterError('Invalid form_save keyword.')
 
-def save_process_batch(data, func, path_save, file_name, batch_num=200, save_key='data', mode_batch='batch', *args, **kwargs):
+
+def save_process_batch(data, func, path_save, file_name, batch_num=200, save_key='data', mode_batch='batch',
+                       *args, **kwargs):
     """Process data by batch through func, save to path_save.
     Args:
         data (np.ndarray,shape==(nsam, - - )): data to save
@@ -717,10 +719,10 @@ def save_process_batch(data, func, path_save, file_name, batch_num=200, save_key
             with tables.open_file(os.path.join(path_save, file_name+'.hdf5'), 'a') as f_w:
                 if save_key not in f_w.root:
                     data_earray = f_w.create_earray(f_w.root, save_key,
-                        tables.Atom.from_dtype(dtype),
-                        ((0,)+data_result.shape[1:]),
-                        chunkshape=(data_result.ndim-1)*(1,)+data_result.shape[-1:],
-                        filters=tables.Filters(complevel=9, complib='blosc'))
+                                                    tables.Atom.from_dtype(dtype),
+                                                    ((0,)+data_result.shape[1:]),
+                                                    chunkshape=(data_result.ndim-1)*(1,)+data_result.shape[-1:],
+                                                    filters=tables.Filters(complevel=9, complib='blosc'))
                 else:
                     data_earray = getattr(f_w.root, save_key)
                 data_earray.append(data_result)
@@ -740,6 +742,7 @@ def save_process_batch(data, func, path_save, file_name, batch_num=200, save_key
                     f[save_key][-data_result.shape[0]:] = data_result
         else:
             raise ParameterError('Invalid mode_batch keyword.')
+
 
 def data_seg_create(path_class):
     """Create and save seg wavmats from raw data .wav files,
@@ -767,9 +770,9 @@ def data_seg_create(path_class):
         # original wav sampling points
         sourceframesi_np = feature_extract(
             'sample_np', **{
-                'sources':sources_wavi_np,
-                'fl':get_fl(),
-                'fs':get_fs()})  # 1d list 2darray to 1d list 2darray
+                'sources': sources_wavi_np,
+                'fl': get_fl(),
+                'fs': get_fs()})  # 1d list 2darray to 1d list 2darray
         # 1d list 2darray to 2darray (n_samples, fl)
         source_frames.append(np.vstack(np.asarray(sourceframesi_np)))
 
@@ -781,11 +784,12 @@ def data_seg_create(path_class):
     for i in range(0, n_src, 1):
         dir_names_save.append('s_'+str(i))
     with open(os.path.join(path_seg_root, 'dirname.json'), 'w', encoding='utf-8') as f_w:
-        json.dump({'dirname':dir_names_save}, f_w)
+        json.dump({'dirname': dir_names_save}, f_w)
 
     path_seg = path_class.get_path_seg()
     mkdir(path_seg)
     save_datas(dict(zip(dir_names_save, source_frames)), path_seg, dtype='float64')
+
 
 def data_mixwav_create(path_class):  # pylint: disable=too-many-locals
     """Create and save mixed sources original sampling point wavmat,
@@ -807,7 +811,7 @@ def data_mixwav_create(path_class):  # pylint: disable=too-many-locals
 
     # read sources
     mycopyfile(os.path.join(path_seg_root, 'dirname.json'),
-                os.path.join(path_source_root, 'dirname.json'))
+               os.path.join(path_source_root, 'dirname.json'))
     dir_names = json.load(open(os.path.join(path_source_root, 'dirname.json'), 'r'))['dirname']
 
     source_frames = read_source(path_seg, dir_names)
@@ -817,7 +821,7 @@ def data_mixwav_create(path_class):  # pylint: disable=too-many-locals
 
     n_src = len(source_frames)
 
-    path_source_out =  os.path.join(path_source_root, 's_hdf5')
+    path_source_out = os.path.join(path_source_root, 's_hdf5')
     mkdir(path_source_out)
     dir_names = []
     data_list = []
@@ -842,12 +846,13 @@ def data_mixwav_create(path_class):  # pylint: disable=too-many-locals
                 mix_cij_arr.shape[0:1]+(1,)+mix_cij_arr.shape[-1:])
             data_list.append(mix_cij_arr)
     with open(os.path.join(path_source_root, 'dirname.json'), 'w', encoding='utf-8') as f_w:
-        json.dump({'dirname':dir_names}, f_w)
+        json.dump({'dirname': dir_names}, f_w)
 
     save_datas(dict(zip(dir_names, data_list)), path_source_out)
 
+
 def data_feature_create(path_class_in, path_class_out, batch_save=0,
-    form_src='magspectrum', **kwargs):  # pylint: disable=too-many-locals
+                        form_src='magspectrum', **kwargs):  # pylint: disable=too-many-locals
     """Create and save feature sources_frames.
     Args:
         path_class_in (object class PathSourceRoot): object of class to compute path.
@@ -874,12 +879,12 @@ def data_feature_create(path_class_in, path_class_out, batch_save=0,
     mkdir(path_source_out)
 
     mycopyfile(os.path.join(path_source_in_root, 'dirname.json'),
-                os.path.join(path_source_out_root, 'dirname.json'))
+               os.path.join(path_source_out_root, 'dirname.json'))
     dir_names = json.load(
         open(os.path.join(path_source_out_root, 'dirname.json'), 'r'))['dirname']
 
     if 'mode_read' in kwargs.keys():
-        sources_wavmat = read_datas(path_source_in, dir_names, **{'mode':kwargs['mode_read']})
+        sources_wavmat = read_datas(path_source_in, dir_names, **{'mode': kwargs['mode_read']})
     else:
         sources_wavmat = read_datas(path_source_in, dir_names)
 
@@ -890,11 +895,11 @@ def data_feature_create(path_class_in, path_class_out, batch_save=0,
         for source_i in sources_wavmat:
             source_frames.append(feature_extract(
                 feature, **{
-                    'source':source_i.reshape(-1, ),
-                    'window':window,
-                    'win_length':win_length, 'hop_length':hop_length,
-                    'n_fft':win_length, 'center':False,
-                    'dtype':np.complex64, 'fix_length':fix_length}))  # 2D to 3D
+                    'source': source_i.reshape(-1, ),
+                    'window': window,
+                    'win_length': win_length, 'hop_length': hop_length,
+                    'n_fft': win_length, 'center': False,
+                    'dtype': np.complex64, 'fix_length': fix_length}))  # 2D to 3D
         return np.asarray(source_frames, dtype=np.float32)
 
     def magspectrum_create(sources_wavmat, win_length, hop_length, fix_length=False, window='hamming'):
@@ -925,16 +930,16 @@ def data_feature_create(path_class_in, path_class_out, batch_save=0,
             for source_i in sources:
                 source_frames.append(feature_extract(
                     'logmelspectrum', **{
-                        'source':source_i.reshape(-1, ),
-                        'sr':sr, 'n_mels':n_mels, 'window':window,
-                        'win_length':win_length, 'hop_length':hop_length,
-                        'n_fft':win_length, 'center':False, 'dtype':np.float32}))  # 2D to 3D
+                        'source': source_i.reshape(-1, ),
+                        'sr': sr, 'n_mels': n_mels, 'window': window,
+                        'win_length': win_length, 'hop_length': hop_length,
+                        'n_fft': win_length, 'center': False, 'dtype': np.float32}))  # 2D to 3D
         elif mode == 1:  # input stft spectrum
             for source_i in sources:
                 source_frames.append(feature_extract(
                     'logmelspectrum', **{
-                        'S':source_i.transpose()**2,
-                        'sr':sr, 'n_mels':n_mels}))  # 2D to 3D
+                        'S': source_i.transpose()**2,
+                        'sr': sr, 'n_mels': n_mels}))  # 2D to 3D
         return np.asarray(source_frames, dtype=np.float32)
 
     def mfcc_create(sources, sr, n_mfcc,
@@ -947,18 +952,18 @@ def data_feature_create(path_class_in, path_class_out, batch_save=0,
             for source_i in sources:
                 source_frames.append(feature_extract(
                     'mfcc', **{
-                        'source':source_i.reshape(-1, ), 'sr':sr, 'n_mfcc':n_mfcc,
-                        'n_fft':win_length, 'hop_length':hop_length, 'win_length':win_length,
-                        'window':window, 'center':False,
-                        'n_mels':n_mels, 'dtype':np.float32
-                        }))  # 2D to 3D
+                        'source': source_i.reshape(-1, ), 'sr': sr, 'n_mfcc': n_mfcc,
+                        'n_fft': win_length, 'hop_length': hop_length, 'win_length': win_length,
+                        'window': window, 'center': False,
+                        'n_mels': n_mels, 'dtype': np.float32
+                    }))  # 2D to 3D
         elif mode == 1:  # input log-power Mel spectrogram
             for source_i in sources:
                 source_frames.append(feature_extract(
                     'mfcc', **{
-                        'source':None, 'S':librosa.power_to_db(source_i.transpose()),
-                        'sr':sr, 'n_mfcc':n_mfcc
-                        }))  # 2D to 3D
+                        'source': None, 'S': librosa.power_to_db(source_i.transpose()),
+                        'sr': sr, 'n_mfcc': n_mfcc
+                    }))  # 2D to 3D
         return np.asarray(source_frames, dtype=np.float32)
 
     def demon_create(sources, high=30000, low=20000, cutoff=1000.0, fs=200000, mode='square_law'):
@@ -968,8 +973,8 @@ def data_feature_create(path_class_in, path_class_out, batch_save=0,
         for source_i in sources:
             source_frames.append(feature_extract(
                 'demon', **{
-                    'source':source_i, 'high':high, 'low':low, 'cutoff':cutoff, 'fs':fs, 'mode':mode
-                    }))  # 2D to 3D
+                    'source': source_i, 'high': high, 'low': low, 'cutoff': cutoff, 'fs': fs, 'mode': mode
+                }))  # 2D to 3D
         return np.asarray(source_frames, dtype=np.float32)
 
     def feature_create(sources, path_class_out, form_src, **kwargs):
@@ -1037,7 +1042,8 @@ def data_feature_create(path_class_in, path_class_out, batch_save=0,
 
                 source_frames_i_j = feature_create(sources_i_j, path_class_out, form_src, **kwargs)
                 save_datas(dict(zip([dir_names[s_i]], [source_frames_i_j])),
-                            path_source_out, mode_batch=mode_batch)
+                           path_source_out, mode_batch=mode_batch)
+
 
 if __name__ == '__main__':
     logging.basicConfig(format='%(levelname)s:%(message)s',
@@ -1054,7 +1060,7 @@ if __name__ == '__main__':
     data_mixwav_create(PATH_CLASS)
 # ---------------------------------------------------------------------------------------------------
     WIN_LIST = [264, 528, 1056, 1582, 2110, 2638, 3164, 10547]
-    HOP_LIST = [ 66, 132,  264,  396,  527,  659,  791, 10547]
+    HOP_LIST = [66, 132,  264,  396,  527,  659,  791, 10547]
 
     N_MELS = [512, 256, 128]
 
@@ -1065,69 +1071,69 @@ if __name__ == '__main__':
         path_class_in = PathSourceRoot(PATH_ROOT, form_src='wav')
         path_class_out = PathSourceRoot(
             PATH_ROOT, form_src='magspectrum', win_length=win_i, hop_length=hop_i)
-        data_feature_create(path_class_in, path_class_out, batch_save=0,  # batch_save=200, 0; 'mode_save':'batch_h5py'
-                            form_src='magspectrum', **{'fix_length':True, 'window':'hann'})
+        data_feature_create(path_class_in, path_class_out, batch_save=0,  # batch_save=200, 'mode_save':'batch_h5py'
+                            form_src='magspectrum', **{'fix_length': True, 'window': 'hann'})
 
-#        # Create angspectrum feature mixed sources.
-#        #  Not prefered, data shape may be different.
-#        path_class_in = PathSourceRoot(PATH_ROOT, form_src='wav')
-#        path_class_out = PathSourceRoot(
-#            PATH_ROOT, form_src='angspectrum', win_length=win_i, hop_length=hop_i)
-#        data_feature_create(path_class_in, path_class_out, batch_save=0,  # batch_save=200, 0
-#                            form_src='angspectrum', **{'fix_length':True, 'window':'hann'})
-#
+        # # Create angspectrum feature mixed sources.
+        # #  Not prefered, data shape may be different.
+        # path_class_in = PathSourceRoot(PATH_ROOT, form_src='wav')
+        # path_class_out = PathSourceRoot(
+        #     PATH_ROOT, form_src='angspectrum', win_length=win_i, hop_length=hop_i)
+        # data_feature_create(path_class_in, path_class_out, batch_save=0,  # batch_save=200, 'mode_save':'batch_h5py'
+        #                     form_src='angspectrum', **{'fix_length':True, 'window':'hann'})
+
         # Create realspectrum feature mixed sources.
         path_class_in = PathSourceRoot(PATH_ROOT, form_src='wav')
         path_class_out = PathSourceRoot(
             PATH_ROOT, form_src='realspectrum', win_length=win_i, hop_length=hop_i)
-        data_feature_create(path_class_in, path_class_out, batch_save=0,  # batch_save=200, 0
-                            form_src='realspectrum', **{'fix_length':True, 'window':'hann'})
+        data_feature_create(path_class_in, path_class_out, batch_save=0,  # batch_save=200, 'mode_save':'batch_h5py'
+                            form_src='realspectrum', **{'fix_length': True, 'window': 'hann'})
 
-       # Create imgspectrum feature mixed sources.
+        # Create imgspectrum feature mixed sources.
         path_class_in = PathSourceRoot(PATH_ROOT, form_src='wav')
         path_class_out = PathSourceRoot(
             PATH_ROOT, form_src='imgspectrum', win_length=win_i, hop_length=hop_i)
-        data_feature_create(path_class_in, path_class_out, batch_save=0,  # batch_save=200, 0
-                            form_src='imgspectrum', **{'fix_length':True, 'window':'hann'})
+        data_feature_create(path_class_in, path_class_out, batch_save=0,  # batch_save=200, 'mode_save':'batch_h5py'
+                            form_src='imgspectrum', **{'fix_length': True, 'window': 'hann'})
 
         for n_mels_i in N_MELS:
-#            # Create logmelspectrum feature from wav.
-#            # Not prefered, data shape may be different.
-#            path_class_in = PathSourceRoot(PATH_ROOT, form_src='wav')
-#            path_class_out = PathSourceRoot(
-#                PATH_ROOT, form_src='logmelspectrum', win_length=win_i, hop_length=hop_i, n_mels=n_mels_i)
-#            data_feature_create(path_class_in, path_class_out, batch_save=0,  # batch_save=200, 0
-#                                form_src='logmelspectrum',
-#                                **{'sr':_SR, 'n_mels':n_mels_i, 'window':'hann'})
+            # # Create logmelspectrum feature from wav.
+            # # Not prefered, data shape may be different.
+            # path_class_in = PathSourceRoot(PATH_ROOT, form_src='wav')
+            # path_class_out = PathSourceRoot(
+            #     PATH_ROOT, form_src='logmelspectrum', win_length=win_i, hop_length=hop_i, n_mels=n_mels_i)
+            # data_feature_create(path_class_in, path_class_out, batch_save=0,  # batch_save=200, 'mode_save':'batch_h5py'
+            #                     form_src='logmelspectrum',
+            #                     **{'sr':_SR, 'n_mels':n_mels_i, 'window':'hann'})
 
             # Create logmelspectrum feature from magspectrum.
             path_class_in = PathSourceRoot(
                 PATH_ROOT, form_src='magspectrum', win_length=win_i, hop_length=hop_i)
             path_class_out = PathSourceRoot(
                 PATH_ROOT, form_src='logmelspectrum', win_length=win_i, hop_length=hop_i, n_mels=n_mels_i)
-            data_feature_create(path_class_in, path_class_out, batch_save=0,  # batch_save=200, 0
+            data_feature_create(path_class_in, path_class_out, batch_save=0,  # batch_save=200, 'mode_save':'batch_h5py'
                                 form_src='logmelspectrum',
-                                **{'mode':1, 'sr':_SR, 'n_mels':n_mels_i})
+                                **{'mode': 1, 'sr': _SR, 'n_mels': n_mels_i})
 
             for n_mfcc_i in N_MFCC:
-#                # Create mfcc feature from wav.
-#                #  Not prefered, data shape may be different.
-#                path_class_in = PathSourceRoot(PATH_ROOT, form_src='wav')
-#                path_class_out = PathSourceRoot(
-#                    PATH_ROOT, form_src='mfcc', win_length=win_i, hop_length=hop_i, n_mels=n_mels_i, n_mfcc=n_mfcc_i)
-#                data_feature_create(path_class_in, path_class_out, batch_save=0,  # batch_save=200, 0
-#                                    form_src='mfcc',
-#                                    **{'sr':_SR, 'n_mfcc':n_mfcc_i,
-#                                       'n_mels':n_mels_i, 'window':'hann'})
-#
+                # # Create mfcc feature from wav.
+                # #  Not prefered, data shape may be different.
+                # path_class_in = PathSourceRoot(PATH_ROOT, form_src='wav')
+                # path_class_out = PathSourceRoot(
+                #     PATH_ROOT, form_src='mfcc', win_length=win_i, hop_length=hop_i, n_mels=n_mels_i, n_mfcc=n_mfcc_i)
+                # data_feature_create(path_class_in, path_class_out, batch_save=0,  # batch_save=200, 0
+                #                     form_src='mfcc',
+                #                     **{'sr':_SR, 'n_mfcc':n_mfcc_i,
+                #                       'n_mels':n_mels_i, 'window':'hann'})
+
                 # Create mfcc feature from logmelspectrum.
                 path_class_in = PathSourceRoot(
                     PATH_ROOT, form_src='logmelspectrum', win_length=win_i, hop_length=hop_i, n_mels=n_mels_i)
                 path_class_out = PathSourceRoot(
                     PATH_ROOT, form_src='mfcc', win_length=win_i, hop_length=hop_i, n_mels=n_mels_i, n_mfcc=n_mfcc_i)
-                data_feature_create(path_class_in, path_class_out, batch_save=0,  # batch_save=200, 0
+                data_feature_create(path_class_in, path_class_out, batch_save=0,  # batch_save=200, 'mode_save':'batch_h5py'
                                     form_src='mfcc',
-                                    **{'mode':1, 'sr':_SR, 'n_mfcc':n_mfcc_i})
+                                    **{'mode': 1, 'sr': _SR, 'n_mfcc': n_mfcc_i})
 # ---------------------------------------------------------------------------------------------------
     # Create DEMON feature.
     HIGH_LIST = [7910.1]
@@ -1138,8 +1144,9 @@ if __name__ == '__main__':
         for cutoff_i in CUTOFF_LIST:
             path_class_in = PathSourceRoot(PATH_ROOT, form_src='wav')
             path_class_out = PathSourceRoot(
-                PATH_ROOT, form_src='demon', **{'high':high_i, 'low':low_i, 'cutoff':cutoff_i})
-            data_feature_create(path_class_in, path_class_out, batch_save=0,  # batch_save=200, 0; 'mode_save':'batch_h5py'
-                                form_src='demon', **{'high':high_i, 'low':low_i, 'cutoff':cutoff_i, 'fs':_SR, 'mode':'square_law'})
+                PATH_ROOT, form_src='demon', **{'high': high_i, 'low': low_i, 'cutoff': cutoff_i})
+            data_feature_create(path_class_in, path_class_out, batch_save=0,  # batch_save=200, 'mode_save':'batch_h5py'
+                                form_src='demon', **{'high': high_i, 'low': low_i, 'cutoff': cutoff_i, 'fs': _SR,
+                                                     'mode': 'square_law'})
 
     logging.info('finished')

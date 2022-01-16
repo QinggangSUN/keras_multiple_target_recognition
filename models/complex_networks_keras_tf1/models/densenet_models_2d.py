@@ -43,7 +43,7 @@ class DenseNet2D(keras.Model):
             bottleneck (bool, optional): flag to add bottleneck blocks in between dense blocks. Defaults to False.
             reduction (float, optional): reduction factor of transition blocks.
                 Note : reduction value is inverted to compute compression. Defaults to 0.0.
-            dropout_rate (float, optional): dropout rate of conv layers. Defaults to 0.0.
+            dropout_rate (float, optional): dropout rate. Defaults to 0.0.
             weight_decay (float, optional): weight decay rate. Defaults to 1e-4.
             subsample_initial_block (bool, optional): Set to True to subsample the initial convolution and
                 add a Pool2D layer before the dense blocks are added. Defaults to False.
@@ -54,7 +54,6 @@ class DenseNet2D(keras.Model):
             classes (int, optional): number of classes to classify, only to be specified if `include_top` is True.
                 Defaults to None.
             output_activation (str, optional): Type of activation at the top layer. Defaults to None.
-            dropout_fc (float, optional): dropout rate of dense layer. Defaults to None.
     """
 
     def __init__(self,
@@ -74,7 +73,6 @@ class DenseNet2D(keras.Model):
                  include_top=False,
                  classes=None,
                  output_activation=None,
-                 dropout_fc=None,
                  *args,
                  **kwargs
                 ):
@@ -124,8 +122,6 @@ class DenseNet2D(keras.Model):
                                   padding='same', use_bias=False,
                                   spectral_parametrization=False,
                                   kernel_regularizer=keras.regularizers.l2(weight_decay))(inputs)
-        if dropout_rate:
-            x_complex = keras.layers.Dropout(dropout_rate)(x_complex)
 
         if subsample_initial_block:
             x_complex = ComplexBatchNormalization(axis=concat_axis, epsilon=1.1e-5)(x_complex)
@@ -143,8 +139,7 @@ class DenseNet2D(keras.Model):
 
             # add transition_block
             x_complex = transition2d_block(x_complex, nb_filter, activation=activation_conv,
-                                           compression=compression,
-                                           dropout_rate=dropout_rate, weight_decay=weight_decay)
+                                           compression=compression, weight_decay=weight_decay)
             nb_filter = int(nb_filter * compression)
 
         # The last dense_block does not have a transition_block
@@ -177,10 +172,6 @@ class DenseNet2D(keras.Model):
                 x = ComplexDense(classes, activation=output_activation)(x_complex)
             else:
                 x = keras.layers.Dense(classes, activation=output_activation)(x_complex)
-
-            if dropout_fc:
-                x = keras.layers.Dropout(dropout_fc)(x)
-
         else:
             x = x_complex
 
@@ -206,7 +197,7 @@ class DenseNet2D121(DenseNet2D):
         bottleneck (bool, optional): flag to add bottleneck blocks in between dense blocks. Defaults to True.
         reduction (float, optional): reduction factor of transition blocks.
             Note : reduction value is inverted to compute compression. Defaults to 0.5.
-        dropout_rate (float, optional): dropout rate of conv layers. Defaults to 0.0.
+        dropout_rate (float, optional): dropout rate. Defaults to 0.0.
         weight_decay (float, optional): weight decay rate. Defaults to 1e-4.
         subsample_initial_block (bool, optional): Set to True to subsample the initial convolution and
             add a Pool2D layer before the dense blocks are added. Defaults to True.
@@ -217,7 +208,6 @@ class DenseNet2D121(DenseNet2D):
         classes (int, optional): number of classes to classify, only to be specified if `include_top` is True.
             Defaults to 10.
         output_activation (str, optional): Type of activation at the top layer. Defaults to 'softmax'.
-        dropout_fc (float, optional): dropout rate of dense layer. Defaults to None.
     Usage:
         >>> from complex_networks_keras_tf1.models.densenet_models_2d import DenseNet2D121
         >>> from keras.layers import Input
@@ -257,7 +247,6 @@ class DenseNet2D121(DenseNet2D):
                  include_top=True,
                  classes=10,
                  output_activation='softmax',
-                 dropout_fc=None,
                  *args,
                  **kwargs
                 ):
@@ -278,7 +267,6 @@ class DenseNet2D121(DenseNet2D):
             include_top,
             classes,
             output_activation,
-            dropout_fc,
             *args,
             **kwargs
         )
@@ -303,7 +291,7 @@ class DenseNet2D169(DenseNet2D):
         bottleneck (bool, optional): flag to add bottleneck blocks in between dense blocks. Defaults to True.
         reduction (float, optional): reduction factor of transition blocks.
             Note : reduction value is inverted to compute compression. Defaults to 0.5.
-        dropout_rate (float, optional): dropout rate of conv layers. Defaults to 0.0.
+        dropout_rate (float, optional): dropout rate. Defaults to 0.0.
         weight_decay (float, optional): weight decay rate. Defaults to 1e-4.
         subsample_initial_block (bool, optional): Set to True to subsample the initial convolution and
             add a Pool2D layer before the dense blocks are added. Defaults to True.
@@ -314,7 +302,6 @@ class DenseNet2D169(DenseNet2D):
         classes (int, optional): number of classes to classify, only to be specified if `include_top` is True.
             Defaults to 10.
         output_activation (str, optional): Type of activation at the top layer. Defaults to 'softmax'.
-        dropout_fc (float, optional): dropout rate of dense layer. Defaults to None.
     Usage:
         >>> from complex_networks_keras_tf1.models.densenet_models_2d import DenseNet2D169
         >>> from keras.layers import Input
@@ -354,7 +341,6 @@ class DenseNet2D169(DenseNet2D):
                  include_top=True,
                  classes=10,
                  output_activation='softmax',
-                 dropout_fc=None,
                  *args,
                  **kwargs
                 ):
@@ -375,7 +361,6 @@ class DenseNet2D169(DenseNet2D):
             include_top,
             classes,
             output_activation,
-            dropout_fc,
             *args,
             **kwargs
         )
@@ -400,7 +385,7 @@ class DenseNet2D201(DenseNet2D):
         bottleneck (bool, optional): flag to add bottleneck blocks in between dense blocks. Defaults to True.
         reduction (float, optional): reduction factor of transition blocks.
             Note : reduction value is inverted to compute compression. Defaults to 0.5.
-        dropout_rate (float, optional): dropout rate of conv layers. Defaults to 0.0.
+        dropout_rate (float, optional): dropout rate. Defaults to 0.0.
         weight_decay (float, optional): weight decay rate. Defaults to 1e-4.
         subsample_initial_block (bool, optional): Set to True to subsample the initial convolution and
             add a Pool2D layer before the dense blocks are added. Defaults to True.
@@ -411,7 +396,6 @@ class DenseNet2D201(DenseNet2D):
         classes (int, optional): number of classes to classify, only to be specified if `include_top` is True.
             Defaults to 10.
         output_activation (str, optional): Type of activation at the top layer. Defaults to 'softmax'.
-        dropout_fc (float, optional): dropout rate of dense layer. Defaults to None.
     Usage:
         >>> from complex_networks_keras_tf1.models.densenet_models_2d import DenseNet2D201
         >>> from keras.layers import Input
@@ -451,7 +435,6 @@ class DenseNet2D201(DenseNet2D):
                  include_top=True,
                  classes=10,
                  output_activation='softmax',
-                 dropout_fc=None,
                  *args,
                  **kwargs
                 ):
@@ -472,7 +455,6 @@ class DenseNet2D201(DenseNet2D):
             include_top,
             classes,
             output_activation,
-            dropout_fc,
             *args,
             **kwargs
         )
@@ -508,7 +490,6 @@ class DenseNet2D264(DenseNet2D):
         classes (int, optional): number of classes to classify, only to be specified if `include_top` is True.
             Defaults to 10.
         output_activation (str, optional): Type of activation at the top layer. Defaults to 'softmax'.
-        dropout_fc (float, optional): dropout rate of dense layer. Defaults to None.
     Usage:
         >>> from complex_networks_keras_tf1.models.densenet_models_2d import DenseNet2D264
         >>> from keras.layers import Input
@@ -548,7 +529,6 @@ class DenseNet2D264(DenseNet2D):
                  include_top=True,
                  classes=10,
                  output_activation='softmax',
-                 dropout_fc=None,
                  *args,
                  **kwargs
                 ):
@@ -569,7 +549,6 @@ class DenseNet2D264(DenseNet2D):
             include_top,
             classes,
             output_activation,
-            dropout_fc,
             *args,
             **kwargs
         )
@@ -605,7 +584,6 @@ class DenseNet2D161(DenseNet2D):
         classes (int, optional): number of classes to classify, only to be specified if `include_top` is True.
             Defaults to 10.
         output_activation (str, optional): Type of activation at the top layer. Defaults to 'softmax'.
-        dropout_fc (float, optional): dropout rate of dense layer. Defaults to None.
     Usage:
         >>> from complex_networks_keras_tf1.models.densenet_models_2d import DenseNet2D161
         >>> from keras.layers import Input
@@ -645,7 +623,6 @@ class DenseNet2D161(DenseNet2D):
                  include_top=True,
                  classes=10,
                  output_activation='softmax',
-                 dropout_fc=None,
                  *args,
                  **kwargs
                 ):
@@ -666,7 +643,6 @@ class DenseNet2D161(DenseNet2D):
             include_top,
             classes,
             output_activation,
-            dropout_fc,
             *args,
             **kwargs
         )

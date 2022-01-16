@@ -8,6 +8,11 @@ E-mail: sun10qinggang@163.com
 
 """
 
+
+from sklearn import preprocessing
+import prepare_data_shipsear_recognition_mix_s0tos3 as m_pre_data_shipsear
+
+
 def n_hot_labels(nsrc):
     """Return an mixed sources n_hot labels matix with input number of nsrc.
     Args:
@@ -37,6 +42,7 @@ def n_hot_labels(nsrc):
         labels.extend(labels_ci.tolist())
     return labels
 
+
 def subset_nums_create(path_source_root, sub_set_way, rates, n_samples, n_sources):
     """Save sub_set nums.
     Args:
@@ -65,6 +71,7 @@ def subset_nums_create(path_source_root, sub_set_way, rates, n_samples, n_source
     with open(os.path.join(path_source_root, f'nums_{sub_set_way}.json'), 'w', encoding='utf-8') as f_w:
         json.dump({'data': nums_rand}, f_w)
 
+
 def subset_x(source_frames, nums_rand):
     """Sub_set feature datasets x.
     Args:
@@ -82,6 +89,7 @@ def subset_x(source_frames, nums_rand):
         x_sets.append(np.asarray(x_sets_i, dtype=np.float32))
     return x_sets
 
+
 def y_sets_create(nums_rand, y_labels, n_src):
     """Create label data y_sets.
     Args:
@@ -97,8 +105,6 @@ def y_sets_create(nums_rand, y_labels, n_src):
             np.asarray(label_i, dtype=np.int32).reshape(-1, 1, n_src-1))
     return y_sets
 
-from sklearn import preprocessing
-import prepare_data_shipsear_recognition_mix_s0tos3 as m_pre_data_shipsear
 
 class XsetSourceFrames(object):
     """Read and scaler data x_sets."""
@@ -112,7 +118,7 @@ class XsetSourceFrames(object):
             self._source_frames = np.asarray(
                 m_pre_data_shipsear.read_datas(
                     os.path.join(self._path_source_root, 's_hdf5'),
-                    self._dir_names, **{'mode':kwargs['mode_read']}), dtype=np.float32)
+                    self._dir_names, **{'mode': kwargs['mode_read']}), dtype=np.float32)
         else:
             self._source_frames = np.asarray(
                 m_pre_data_shipsear.read_datas(
@@ -149,6 +155,7 @@ class XsetSourceFrames(object):
             (self.n_sources, self.n_samples)+self.feature_shape)
         return self._sourceframes_mm
 
+
 if __name__ == '__main__':
     import os
     import logging
@@ -161,7 +168,6 @@ if __name__ == '__main__':
     np.random.seed(1337)  # for reproducibility
     logging.basicConfig(format='%(levelname)s:%(message)s',
                         level=logging.DEBUG)
-
 
     def data_create(path_class, rates_set, **kwargs):  # pylint: disable=too-many-locals
         """Create X_train, X_val, X_test scalered data, and
@@ -214,12 +220,12 @@ if __name__ == '__main__':
     # for feature original sample points
     PATH_CLASS = m_pre_data_shipsear.PathSourceRoot(
         PATH_ROOT, form_src='wav', scaler_data='or', sub_set_way='rand')
-      # PATH_ROOT, form_src='wav', scaler_data='mm', sub_set_way='order')
+    # PATH_ROOT, form_src='wav', scaler_data='mm', sub_set_way='order')
 
     data_create(PATH_CLASS, RATES_SET)
 # ---------------------------------------------------------------------------------------------------
     WIN_LIST = [264, 528, 1056, 1582, 2110, 2638, 3164, 10547]
-    HOP_LIST = [ 66, 132,  264,  396,  527,  659,  791, 10547]
+    HOP_LIST = [66, 132,  264,  396,  527,  659,  791, 10547]
 
     N_MELS = [512, 256, 128]
 
@@ -229,33 +235,39 @@ if __name__ == '__main__':
         path_class = m_pre_data_shipsear.PathSourceRoot(
             PATH_ROOT, form_src='magspectrum', win_length=win_i, hop_length=hop_i,
             scaler_data='or', sub_set_way='rand')
+        # scaler_data='mm', sub_set_way='order')
         data_create(path_class, RATES_SET)  # , **{'mode_read':'pytables'}
 
         path_class = m_pre_data_shipsear.PathSourceRoot(
             PATH_ROOT, form_src='angspectrum', win_length=win_i, hop_length=hop_i,
             scaler_data='or', sub_set_way='rand')
+        # scaler_data='mm', sub_set_way='order')
         data_create(path_class, RATES_SET)
 
         path_class = m_pre_data_shipsear.PathSourceRoot(
             PATH_ROOT, form_src='realspectrum', win_length=win_i, hop_length=hop_i,
             scaler_data='or', sub_set_way='rand')
+        # scaler_data='mm', sub_set_way='order')
         data_create(path_class, RATES_SET)
 
         path_class = m_pre_data_shipsear.PathSourceRoot(
             PATH_ROOT, form_src='imgspectrum', win_length=win_i, hop_length=hop_i,
             scaler_data='or', sub_set_way='rand')
+        # scaler_data='mm', sub_set_way='order')
         data_create(path_class, RATES_SET)
 
         for n_mels_i in N_MELS:
             path_class = m_pre_data_shipsear.PathSourceRoot(
                 PATH_ROOT, form_src='logmelspectrum', win_length=win_i, hop_length=hop_i, n_mels=n_mels_i,
                 scaler_data='or', sub_set_way='rand')
+            # scaler_data='mm', sub_set_way='order')
             data_create(path_class, RATES_SET)
 
             for n_mfcc_i in N_MFCC:
                 path_class = m_pre_data_shipsear.PathSourceRoot(
                     PATH_ROOT, form_src='mfcc', win_length=win_i, hop_length=hop_i, n_mels=n_mels_i, n_mfcc=n_mfcc_i,
                     scaler_data='or', sub_set_way='rand')
+                # scaler_data='mm', sub_set_way='order')
                 data_create(path_class, RATES_SET)
 # ---------------------------------------------------------------------------------------------------
     # Create DEMON feature.
@@ -268,7 +280,7 @@ if __name__ == '__main__':
             path_class = m_pre_data_shipsear.PathSourceRoot(
                 PATH_ROOT, form_src='demon',
                 scaler_data='or', sub_set_way='rand',
-                **{'high':high_i, 'low':low_i, 'cutoff':cutoff_i})
+                **{'high': high_i, 'low': low_i, 'cutoff': cutoff_i})
             data_create(path_class, RATES_SET)
 
     logging.info('data preprocessing finished')
